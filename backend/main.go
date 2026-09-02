@@ -48,7 +48,7 @@ func main() {
 		// New Management, Control Tower & Analytics GET Endpoints
 		api.GET("/kpis/overview", handlers.GetOverviewKPIs)
 		api.GET("/control-tower", handlers.GetControlTower)
-		api.GET("/funnel-metrics", handlers.GetFunnelMetrics)
+		api.GET("/funnel-metrics", handlers.GetFunnelMetrics)	
 		api.GET("/sla/summary", handlers.GetSLASummary)
 		api.GET("/metrics/scorecard", handlers.GetScorecard)
 		api.GET("/retention/metrics", handlers.GetRetentionMetrics)
