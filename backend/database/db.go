@@ -199,6 +199,58 @@ func RunMigrations() {
 		}
 	}
 
+	reqColumns := map[string]string{
+		"Hiring_Manager":       "NVARCHAR(255) NULL",
+		"Priority":             "NVARCHAR(10) NULL",
+		"Salary_Range":         "NVARCHAR(255) NULL",
+		"Location":             "NVARCHAR(255) NULL",
+		"Experience_Required":   "NVARCHAR(255) NULL",
+		"Preferred_Industries": "NVARCHAR(MAX) NULL",
+		"Must_Haves":           "NVARCHAR(MAX) NULL",
+		"Knockout_Criteria":    "NVARCHAR(MAX) NULL",
+		"Bottleneck_Type":      "NVARCHAR(255) NULL",
+		"Pending_Since":        "DATETIME2 NULL",
+		"Remarks":              "NVARCHAR(MAX) NULL",
+		"Action_Owner":         "NVARCHAR(255) NULL",
+	}
+	for col, colType := range reqColumns {
+		alterQuery := fmt.Sprintf(`
+			IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[requisition]') AND name = '%s')
+			BEGIN
+				ALTER TABLE [dbo].[requisition] ADD [%s] %s
+			END
+		`, col, col, colType)
+		_, err = DB.Exec(alterQuery)
+		if err != nil {
+			log.Fatalf("Failed to add column %s to requisition: %v", col, err)
+		}
+	}
+
+	appColumns := map[string]string{
+		"Performance_Score":        "DECIMAL(5,2) NULL",
+		"Behaviour_Score":          "DECIMAL(5,2) NULL",
+		"Performance_Eval_Details": "NVARCHAR(MAX) NULL",
+		"Behaviour_Eval_Details":   "NVARCHAR(MAX) NULL",
+		"Retention_7d_Status":      "NVARCHAR(50) NULL DEFAULT 'Pending'",
+		"Retention_30d_Status":     "NVARCHAR(50) NULL DEFAULT 'Pending'",
+		"Is_30d_Failure":           "BIT NULL DEFAULT 0",
+		"Replacement_Required":     "BIT NULL DEFAULT 0",
+		"In_Talent_Bank":           "BIT NULL DEFAULT 0",
+		"Candidate_Attributes":     "NVARCHAR(MAX) NULL",
+	}
+	for col, colType := range appColumns {
+		alterQuery := fmt.Sprintf(`
+			IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[application_pipeline]') AND name = '%s')
+			BEGIN
+				ALTER TABLE [dbo].[application_pipeline] ADD [%s] %s
+			END
+		`, col, col, colType)
+		_, err = DB.Exec(alterQuery)
+		if err != nil {
+			log.Fatalf("Failed to add column %s to application_pipeline: %v", col, err)
+		}
+	}
+
 	fmt.Println("Migrations completed successfully")
 }
 

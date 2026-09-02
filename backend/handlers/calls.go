@@ -97,7 +97,7 @@ func CreateCall(c *gin.Context) {
 
 	fmt.Printf("Call saved with ID: %d (Call_ID: %s)\n", newID, input.CallID)
 }
-
+	
 func SyncCallDurations(c *gin.Context) {
 	query := `
 		UPDATE [dbo].[application_pipeline]

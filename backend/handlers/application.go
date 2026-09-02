@@ -128,17 +128,64 @@ func CreateApplication(c *gin.Context) {
 }
 
 func GetApplications(c *gin.Context) {
-	query := `SELECT [Id], [Application_ID], [Application_Created_Time], [Application_Status],
+	dept := c.Query("department")
+	pos := c.Query("position")
+	owner := c.Query("owner")
+	prio := c.Query("priority")
+	from := c.Query("from")
+	to := c.Query("to")
+
+	whereClauses := []string{"1=1"}
+	args := []interface{}{}
+	argIdx := 1
+
+	if dept != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("EXISTS (SELECT 1 FROM [dbo].[requisition] r WHERE r.[Job_Opening_ID] = [dbo].[application_pipeline].[Job_Opening_ID] AND r.[Department] = @p%d)", argIdx))
+		args = append(args, dept)
+		argIdx++
+	}
+	if pos != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("[Posting_Title] LIKE @p%d", argIdx))
+		args = append(args, "%"+pos+"%")
+		argIdx++
+	}
+	if owner != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("[Recruiter_Name] = @p%d", argIdx))
+		args = append(args, owner)
+		argIdx++
+	}
+	if prio != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("([Call_Priority] = @p%d OR EXISTS (SELECT 1 FROM [dbo].[requisition] r WHERE r.[Job_Opening_ID] = [dbo].[application_pipeline].[Job_Opening_ID] AND r.[Priority] = @p%d))", argIdx, argIdx))
+		args = append(args, prio)
+		argIdx++
+	}
+	if from != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("[Application_Created_Time] >= @p%d", argIdx))
+		args = append(args, from)
+		argIdx++
+	}
+	if to != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("[Application_Created_Time] <= DATEADD(DAY, 1, @p%d)", argIdx))
+		args = append(args, to)
+		argIdx++
+	}
+
+	whereStmt := strings.Join(whereClauses, " AND ")
+
+	query := fmt.Sprintf(`SELECT [Id], [Application_ID], [Application_Created_Time], [Application_Status],
 		[Call_Audit_Score], [Call_Priority], [Candidate_Name], [CV_Link],
 		[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [Recruiter_Name],
 		[Source], [Profile_Summary], [Tellecalling_Feedback],
 		[TelleCalling_Time], [Tellecalling_Status], [Offer_Accepted_DateTime],
 		[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time],
-		[Call_Duration], [CreatedAt], [UpdatedAt]
-		FROM [dbo].[application_pipeline] ORDER BY [Application_Created_Time] DESC`
+		[Call_Duration], [Performance_Score], [Behaviour_Score], [Performance_Eval_Details],
+		[Behaviour_Eval_Details], [Retention_7d_Status], [Retention_30d_Status],
+		[Is_30d_Failure], [Replacement_Required], [In_Talent_Bank], [Candidate_Attributes],
+		[CreatedAt], [UpdatedAt]
+		FROM [dbo].[application_pipeline] WHERE %s ORDER BY [Application_Created_Time] DESC`, whereStmt)
 
 	var applications []models.Application
-	err := database.DB.Select(&applications, query)
+	err := database.DB.Select(&applications, query, args...)
 	if err != nil {
 		log.Printf("Failed to fetch applications: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
