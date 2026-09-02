@@ -99,8 +99,8 @@ type ActivityRow struct {
 }
 
 type ScoreRow struct {
-	RecruiterName   string   `json:"recruiter_name" db:"Recruiter_Name"`
-	RequisitionCount int     `json:"requisition_count" db:"Requisition_Count"`
+	RecruiterName     string   `json:"recruiter_name" db:"Recruiter_Name"`
+	RequisitionCount  int      `json:"requisition_count" db:"Requisition_Count"`
 	AvgCallAuditScore *float64 `json:"avg_call_audit_score" db:"Avg_Call_Audit_Score"`
 	AvgCVScore        *float64 `json:"avg_cv_score" db:"Avg_CV_Score"`
 }

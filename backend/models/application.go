@@ -26,6 +26,23 @@ type Application struct {
 	ManagerRoundScheduleDateTime *string `json:"Manager_Round_Schedule_DateTime" db:"Manager_Round_Schedule_DateTime"`
 	ManagerRoundCompletedTime   *string  `json:"Manager_Round_Completed_Time" db:"Manager_Round_Completed_Time"`
 	CallDuration                *float64 `json:"Call_Duration" db:"Call_Duration"`
+
+	// Separate Score Evaluations
+	PerformanceScore       *float64 `json:"Performance_Score" db:"Performance_Score"`
+	BehaviourScore         *float64 `json:"Behaviour_Score" db:"Behaviour_Score"`
+	PerformanceEvalDetails *string  `json:"Performance_Eval_Details" db:"Performance_Eval_Details"`
+	BehaviourEvalDetails   *string  `json:"Behaviour_Eval_Details" db:"Behaviour_Eval_Details"`
+
+	// Retention & Post-Hire Metrics
+	Retention7dStatus   *string `json:"Retention_7d_Status" db:"Retention_7d_Status"`
+	Retention30dStatus   *string `json:"Retention_30d_Status" db:"Retention_30d_Status"`
+	Is30dFailure         *bool   `json:"Is_30d_Failure" db:"Is_30d_Failure"`
+	ReplacementRequired  *bool   `json:"Replacement_Required" db:"Replacement_Required"`
+
+	// Talent Bank
+	InTalentBank        *bool   `json:"In_Talent_Bank" db:"In_Talent_Bank"`
+	CandidateAttributes *string `json:"Candidate_Attributes" db:"Candidate_Attributes"`
+
 	CreatedAt                   time.Time `json:"CreatedAt" db:"CreatedAt"`
 	UpdatedAt                   time.Time `json:"UpdatedAt" db:"UpdatedAt"`
 }

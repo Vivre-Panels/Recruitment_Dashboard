@@ -14,6 +14,23 @@ type Requisition struct {
 	RecruiterName *string   `json:"Recruiter_Name" db:"Recruiter_Name"`
 	Status        *string   `json:"Status" db:"Status"`
 	TargetDate    *string   `json:"Target_Date" db:"Target_Date"`
+
+	// New Management & Requirement Card Fields
+	HiringManager       *string `json:"Hiring_Manager" db:"Hiring_Manager"`
+	Priority            *string `json:"Priority" db:"Priority"`
+	SalaryRange         *string `json:"Salary_Range" db:"Salary_Range"`
+	Location            *string `json:"Location" db:"Location"`
+	ExperienceRequired  *string `json:"Experience_Required" db:"Experience_Required"`
+	PreferredIndustries *string `json:"Preferred_Industries" db:"Preferred_Industries"`
+	MustHaves           *string `json:"Must_Haves" db:"Must_Haves"`
+	KnockoutCriteria    *string `json:"Knockout_Criteria" db:"Knockout_Criteria"`
+
+	// Bottleneck Fields
+	BottleneckType      *string `json:"Bottleneck_Type" db:"Bottleneck_Type"`
+	PendingSince        *string `json:"Pending_Since" db:"Pending_Since"`
+	Remarks             *string `json:"Remarks" db:"Remarks"`
+	ActionOwner         *string `json:"Action_Owner" db:"Action_Owner"`
+
 	CreatedAt     time.Time `json:"CreatedAt" db:"CreatedAt"`
 	UpdatedAt     time.Time `json:"UpdatedAt" db:"UpdatedAt"`
 }
