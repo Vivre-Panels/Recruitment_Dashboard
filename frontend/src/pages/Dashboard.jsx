@@ -83,6 +83,58 @@ function getInitials(name) {
   return name.slice(0, 2).toUpperCase()
 }
 
+function getDateOnly(value) {
+  if (!value && value !== 0) return ''
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return ''
+    const y = value.getFullYear()
+    const m = String(value.getMonth() + 1).padStart(2, '0')
+    const d = String(value.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+
+    // Try ISO date pattern first (YYYY-MM-DD or YYYY/MM/DD)
+    const isoMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+    if (isoMatch) {
+      const y = parseInt(isoMatch[1], 10)
+      const m = parseInt(isoMatch[2], 10)
+      const d = parseInt(isoMatch[3], 10)
+      
+      // Validate month and day ranges
+      if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      }
+    }
+
+    // Try parsing as full datetime string
+    const parsed = new Date(trimmed)
+    if (!Number.isNaN(parsed.getTime())) {
+      const y = parsed.getFullYear()
+      const m = String(parsed.getMonth() + 1).padStart(2, '0')
+      const d = String(parsed.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
+    }
+
+    // Don't fallback to slice - return empty if validation fails
+    return ''
+  }
+
+  return ''
+}
+
+function isDateInRange(value, from, to) {
+  const date = getDateOnly(value)
+  if (!date) return false
+  if (from && date < from) return false
+  if (to && date > to) return false
+  return true
+}
+
 function DashboardInner() {
   const { applications, requisitions } = useData()
   const [search, setSearch] = useState('')
@@ -172,13 +224,7 @@ function DashboardInner() {
   const candFiltered = useMemo(() => {
     let list = searched
     if (candDateFrom || candDateTo) {
-      list = list.filter(a => {
-        const d = (a.Application_Created_Time || a.CreatedAt || '').slice(0, 10)
-        if (!d) return false
-        if (candDateFrom && d < candDateFrom) return false
-        if (candDateTo && d > candDateTo) return false
-        return true
-      })
+      list = list.filter(a => isDateInRange(a.Application_Created_Time || a.CreatedAt, candDateFrom, candDateTo))
     }
     return list
   }, [searched, candDateFrom, candDateTo])
@@ -201,33 +247,33 @@ function DashboardInner() {
         }
       }
       const g = groups[name]
-      const createdDate = (a.Application_Created_Time || a.CreatedAt || '').slice(0, 10)
+      const createdDate = getDateOnly(a.Application_Created_Time || a.CreatedAt)
       const src = (a.Source || '').toLowerCase()
 
       // Associated: count all applications by created date
-      if (createdDate && (!hasFilter || (createdDate >= summDateFrom && createdDate <= summDateTo))) {
+      if (createdDate && (!hasFilter || isDateInRange(a.Application_Created_Time || a.CreatedAt, summDateFrom, summDateTo))) {
         g.associatedCount++
       }
 
       // CV Sourcing: exclude "Shubham sir" in source
-      if (!src.includes('shubham sir') && createdDate && (!hasFilter || (createdDate >= summDateFrom && createdDate <= summDateTo))) {
+      if (!src.includes('shubham sir') && createdDate && (!hasFilter || isDateInRange(a.Application_Created_Time || a.CreatedAt, summDateFrom, summDateTo))) {
         g.cvSourcingCount++
       }
 
-      // Tellecalling Done: by TelleCalling_Time date
-      const tcDate = (a.TelleCalling_Time || '').slice(0, 10)
+      // Tellecalling Done: by TelleCalling_Time date (extract date only and filter by date range)
+      const tcDate = getDateOnly(a.TelleCalling_Time)
       if (tcDate && (!hasFilter || (tcDate >= summDateFrom && tcDate <= summDateTo))) {
         g.tellecallingDoneCount++
       }
 
-      // Manager Round Schedule: by Manager_Round_Schedule_DateTime date
-      const mgrDate = (a.Manager_Round_Schedule_DateTime || '').slice(0, 10)
+      // Manager Round Schedule: by Manager_Round_Schedule_DateTime date (extract date only and filter by date range)
+      const mgrDate = getDateOnly(a.Manager_Round_Schedule_DateTime)
       if (mgrDate && (!hasFilter || (mgrDate >= summDateFrom && mgrDate <= summDateTo))) {
         g.mgrScheduleCount++
       }
 
-      // Offer Accepted: by Offer_Accepted_DateTime date
-      const oaDate = (a.Offer_Accepted_DateTime || '').slice(0, 10)
+      // Offer Accepted: by Offer_Accepted_DateTime date (extract date only and filter by date range)
+      const oaDate = getDateOnly(a.Offer_Accepted_DateTime)
       if (oaDate && (!hasFilter || (oaDate >= summDateFrom && oaDate <= summDateTo))) {
         g.offerAcceptedCount++
       }
