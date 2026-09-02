@@ -1,0 +1,52 @@
+[
+  {
+    "department": "Engineering",
+    "totalJoined": 7,
+    "retention7DaysPct": 100,
+    "retention30DaysPct": 92.5,
+    "failure30DaysPct": 7.5,
+    "replacementRatePct": 0,
+    "successfulHireIndexPct": 94,
+    "avgOnboardingFeedback": 4.8
+  },
+  {
+    "department": "Data & AI",
+    "totalJoined": 4,
+    "retention7DaysPct": 100,
+    "retention30DaysPct": 100,
+    "failure30DaysPct": 0,
+    "replacementRatePct": 0,
+    "successfulHireIndexPct": 98,
+    "avgOnboardingFeedback": 4.9
+  },
+  {
+    "department": "Design & UX",
+    "totalJoined": 2,
+    "retention7DaysPct": 100,
+    "retention30DaysPct": 100,
+    "failure30DaysPct": 0,
+    "replacementRatePct": 0,
+    "successfulHireIndexPct": 95,
+    "avgOnboardingFeedback": 4.7
+  },
+  {
+    "department": "Sales & BD",
+    "totalJoined": 3,
+    "retention7DaysPct": 100,
+    "retention30DaysPct": 75,
+    "failure30DaysPct": 25,
+    "replacementRatePct": 12.5,
+    "successfulHireIndexPct": 82,
+    "avgOnboardingFeedback": 4.2
+  },
+  {
+    "department": "Operations",
+    "totalJoined": 2,
+    "retention7DaysPct": 100,
+    "retention30DaysPct": 100,
+    "failure30DaysPct": 0,
+    "replacementRatePct": 0,
+    "successfulHireIndexPct": 92,
+    "avgOnboardingFeedback": 4.6
+  }
+]

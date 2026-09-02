@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --brand-50: #f4f8f1;
+  --brand-100: #e6f0e0;
+  --brand-500: #5D9240;
+  --brand-600: #497731;
+  --brand-700: #3b5e29;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  color: #0f172a;
+  background-color: #f8fafc;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* UNIVERSAL COMPONENT DESIGN SYSTEM */
+@layer components {
+  /* Universal Page Container */
+  .app-page-container {
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Universal Cards & Containers */
+  .app-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  .app-card-sm {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  /* Universal Form Controls */
+  .app-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.5rem;
+  }
+
+  .app-input {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #0f172a;
+    transition: all 0.15s ease-in-out;
+    outline: none;
+  }
+
+  .app-input:focus {
+    background-color: #ffffff;
+    border-color: #5D9240;
+    box-shadow: 0 0 0 2px rgba(93, 146, 64, 0.15);
+  }
+
+  /* Universal Buttons */
+  .app-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: #5D9240;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+  }
+  .app-btn-primary:hover {
+    background-color: #497731;
+  }
+
+  .app-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: #f1f5f9;
+    color: #334155;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+  }
+  .app-btn-secondary:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .app-btn-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: #0f172a;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    transition: background-color 0.15s ease-in-out;
+    cursor: pointer;
+    border: none;
+  }
+  .app-btn-dark:hover {
+    background-color: #1e293b;
+  }
+
+  /* Universal Table Structure */
+  .app-table-th {
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+  }
+
+  .app-table-td {
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+  }
+}

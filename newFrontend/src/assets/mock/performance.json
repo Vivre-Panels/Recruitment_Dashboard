@@ -1,0 +1,125 @@
+{
+  "performanceEvaluations": [
+    {
+      "recruiterId": "REC-1",
+      "recruiterName": "Rahul Sharma",
+      "resultsScore": 94,
+      "qualityScore": 96,
+      "deadlinesScore": 90,
+      "ownershipScore": 95,
+      "overallPerformanceScore": 93.8,
+      "strengths": [
+        "Exceptional niche tech sourcing (Distributed Go & AI)",
+        "High offer-to-joining conversion (92%)",
+        "Deep candidate relationship management"
+      ],
+      "improvements": [
+        "Needs tighter follow-up on hiring manager interview turnaround SLA"
+      ]
+    },
+    {
+      "recruiterId": "REC-2",
+      "recruiterName": "Priya Nair",
+      "resultsScore": 90,
+      "qualityScore": 92,
+      "deadlinesScore": 94,
+      "ownershipScore": 92,
+      "overallPerformanceScore": 91.6,
+      "strengths": [
+        "Unmatched speed in candidate screening and pipeline velocity",
+        "High hiring manager CSAT score (4.9/5)",
+        "Zero SLA breaches in past quarter"
+      ],
+      "improvements": [
+        "Can expand sourcing outreach across global remote talent pools"
+      ]
+    },
+    {
+      "recruiterId": "REC-3",
+      "recruiterName": "Amit Verma",
+      "resultsScore": 82,
+      "qualityScore": 86,
+      "deadlinesScore": 80,
+      "ownershipScore": 84,
+      "overallPerformanceScore": 83.0,
+      "strengths": [
+        "Strong understanding of frontend frameworks and WebGL competencies",
+        "High candidate screening thoroughness"
+      ],
+      "improvements": [
+        "Time-to-hire is 6 days above team benchmark",
+        "Pipeline drop-off between Sourced and Screening requires optimization"
+      ]
+    },
+    {
+      "recruiterId": "REC-4",
+      "recruiterName": "Sneha Patel",
+      "resultsScore": 86,
+      "qualityScore": 88,
+      "deadlinesScore": 85,
+      "ownershipScore": 89,
+      "overallPerformanceScore": 87.0,
+      "strengths": [
+        "Effective sales leadership and product manager headhunting",
+        "Proactive candidate background verification tracking"
+      ],
+      "improvements": [
+        "Can improve initial compensation qualification during first screening"
+      ]
+    }
+  ],
+  "behaviourEvaluations": [
+    {
+      "recruiterId": "REC-1",
+      "recruiterName": "Rahul Sharma",
+      "reliabilityScore": 4.8,
+      "transparencyScore": 4.9,
+      "initiativeScore": 4.7,
+      "teamBehaviourScore": 4.6,
+      "disciplineScore": 4.5,
+      "responsivenessScore": 4.9,
+      "processAdherenceScore": 4.7,
+      "overallBehaviourScore": 94.2,
+      "managerNotes": "Rahul demonstrates top-tier accountability. Escalates bottlenecks proactively during weekly operational reviews."
+    },
+    {
+      "recruiterId": "REC-2",
+      "recruiterName": "Priya Nair",
+      "reliabilityScore": 5.0,
+      "transparencyScore": 4.8,
+      "initiativeScore": 4.8,
+      "teamBehaviourScore": 5.0,
+      "disciplineScore": 4.9,
+      "responsivenessScore": 4.9,
+      "processAdherenceScore": 4.9,
+      "overallBehaviourScore": 97.4,
+      "managerNotes": "Priya leads with exemplary process discipline. ATS data hygiene and documentation are always spotless."
+    },
+    {
+      "recruiterId": "REC-3",
+      "recruiterName": "Amit Verma",
+      "reliabilityScore": 4.2,
+      "transparencyScore": 4.1,
+      "initiativeScore": 3.9,
+      "teamBehaviourScore": 4.3,
+      "disciplineScore": 4.0,
+      "responsivenessScore": 4.0,
+      "processAdherenceScore": 4.1,
+      "overallBehaviourScore": 81.6,
+      "managerNotes": "Good team player. Needs to ensure candidate stage transitions are updated within the same business day."
+    },
+    {
+      "recruiterId": "REC-4",
+      "recruiterName": "Sneha Patel",
+      "reliabilityScore": 4.4,
+      "transparencyScore": 4.5,
+      "initiativeScore": 4.6,
+      "teamBehaviourScore": 4.5,
+      "disciplineScore": 4.3,
+      "responsivenessScore": 4.6,
+      "processAdherenceScore": 4.4,
+      "overallBehaviourScore": 88.5,
+      "managerNotes": "Demonstrates strong initiative in experimenting with new outbound sourcing channels and email templates."
+    }
+  ]
+}

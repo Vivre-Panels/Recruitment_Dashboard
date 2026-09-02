@@ -1,0 +1,57 @@
+{
+  "companyName": "TalentOps Technologies Inc.",
+  "timezone": "America/Los_Angeles (PST - UTC-8)",
+  "defaultCurrency": "USD ($)",
+  "retentionBenchmarkDays": 30,
+  "p0TargetDays": 25,
+  "p1TargetDays": 40,
+  "p2TargetDays": 60,
+  "slaRules": [
+    {
+      "stage": "CV Sourcing / Profile Submission",
+      "targetHours": 72,
+      "warningHours": 48,
+      "escalateTo": "Lead Recruiter"
+    },
+    {
+      "stage": "Recruiter Screening Feedback",
+      "targetHours": 24,
+      "warningHours": 18,
+      "escalateTo": "Recruiting Manager"
+    },
+    {
+      "stage": "Hiring Manager Interview Scorecard",
+      "targetHours": 48,
+      "warningHours": 36,
+      "escalateTo": "VP of Department"
+    },
+    {
+      "stage": "Panel Debrief & Selection Signoff",
+      "targetHours": 48,
+      "warningHours": 36,
+      "escalateTo": "Head of Talent"
+    },
+    {
+      "stage": "Offer Letter Preparation & Dispatch",
+      "targetHours": 24,
+      "warningHours": 18,
+      "escalateTo": "HR Operations"
+    },
+    {
+      "stage": "Offer Acceptance / Background Check",
+      "targetHours": 72,
+      "warningHours": 48,
+      "escalateTo": "Recruiter"
+    }
+  ],
+  "pipelineStages": [
+    { "name": "Sourced", "description": "Candidate CV identified & parsed into ATS", "isMandatory": true, "order": 1 },
+    { "name": "Screening", "description": "Initial Recruiter qualification & culture check", "isMandatory": true, "order": 2 },
+    { "name": "Interview", "description": "Technical panel & manager evaluation rounds", "isMandatory": true, "order": 3 },
+    { "name": "Selected", "description": "Consensus approval and compensation benchmark", "isMandatory": true, "order": 4 },
+    { "name": "Offered", "description": "Formal employment contract issued", "isMandatory": true, "order": 5 },
+    { "name": "Accepted", "description": "Signed acceptance received", "isMandatory": true, "order": 6 },
+    { "name": "Joined", "description": "Onboarding Day 1 verification", "isMandatory": true, "order": 7 },
+    { "name": "Successful", "description": "30-Day Retention & performance milestone", "isMandatory": true, "order": 8 }
+  ]
+}

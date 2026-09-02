@@ -1,0 +1,74 @@
+{
+  "funnel": [
+    {
+      "stage": "Sourced",
+      "count": 284,
+      "conversionRate": 100,
+      "dropOffRate": 0,
+      "avgDaysInStage": 3
+    },
+    {
+      "stage": "Screening",
+      "count": 142,
+      "conversionRate": 50.0,
+      "dropOffRate": 50.0,
+      "avgDaysInStage": 4
+    },
+    {
+      "stage": "Interview",
+      "count": 58,
+      "conversionRate": 40.8,
+      "dropOffRate": 59.2,
+      "avgDaysInStage": 9
+    },
+    {
+      "stage": "Selected",
+      "count": 24,
+      "conversionRate": 41.4,
+      "dropOffRate": 58.6,
+      "avgDaysInStage": 4
+    },
+    {
+      "stage": "Offered",
+      "count": 21,
+      "conversionRate": 87.5,
+      "dropOffRate": 12.5,
+      "avgDaysInStage": 3
+    },
+    {
+      "stage": "Accepted",
+      "count": 19,
+      "conversionRate": 90.5,
+      "dropOffRate": 9.5,
+      "avgDaysInStage": 5
+    },
+    {
+      "stage": "Joined",
+      "count": 18,
+      "conversionRate": 94.7,
+      "dropOffRate": 5.3,
+      "avgDaysInStage": 21
+    },
+    {
+      "stage": "Successful",
+      "count": 15,
+      "conversionRate": 83.3,
+      "dropOffRate": 16.7,
+      "avgDaysInStage": 30
+    }
+  ],
+  "topDropOffReasons": [
+    { "reason": "Salary expectation mismatch beyond band", "percentage": 34, "stage": "Screening" },
+    { "reason": "Technical architecture depth & problem solving", "percentage": 28, "stage": "Interview" },
+    { "reason": "Long notice period (>60 days) non-negotiable", "percentage": 18, "stage": "Screening" },
+    { "reason": "Counter-offer from existing employer accepted", "percentage": 12, "stage": "Offered" },
+    { "reason": "Candidate location / reluctance to hybrid model", "percentage": 8, "stage": "Interview" }
+  ],
+  "slaSummary": {
+    "totalActiveSlas": 42,
+    "withinSla": 31,
+    "atRisk": 7,
+    "breached": 4,
+    "avgResolutionHours": 32.4
+  }
+}

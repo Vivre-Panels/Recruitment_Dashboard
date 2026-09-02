@@ -1,0 +1,515 @@
+[
+  {
+    "id": "CAN-201",
+    "name": "Arjun Sundaram",
+    "email": "arjun.sundaram@techconnect.com",
+    "phone": "+1 (415) 892-3401",
+    "positionId": "POS-101",
+    "positionTitle": "Staff Backend Architect (Go / Cloud)",
+    "department": "Engineering",
+    "currentStage": "Interview",
+    "recruiter": "Rahul Sharma",
+    "experienceYears": 10,
+    "currentCompany": "Cloudflare Scale",
+    "currentDesignation": "Senior Staff Systems Engineer",
+    "noticePeriodDays": 30,
+    "expectedSalary": "$165,000 / year",
+    "currentSalary": "$145,000 / year",
+    "location": "San Francisco, CA",
+    "qualityScore": 94,
+    "status": "Active",
+    "matchScore": 96,
+    "skills": ["Golang", "Distributed Architecture", "Kubernetes", "gRPC", "Kafka", "High-Throughput IO"],
+    "timeline": [
+      {
+        "id": "TL-1",
+        "stage": "Sourced",
+        "date": "2026-08-10",
+        "actor": "Rahul Sharma",
+        "title": "Profile Sourced & Identified",
+        "description": "Identified on LinkedIn Recruiter with 10 yrs Go/Distributed experience.",
+        "type": "info"
+      },
+      {
+        "id": "TL-2",
+        "stage": "Screening",
+        "date": "2026-08-12",
+        "actor": "Rahul Sharma",
+        "title": "Recruiter Screen Cleared",
+        "description": "Strong alignment on compensation, architecture scale, and hybrid culture.",
+        "type": "success"
+      },
+      {
+        "id": "TL-3",
+        "stage": "Interview",
+        "date": "2026-08-18",
+        "actor": "Vikram Malhotra (VP Eng)",
+        "title": "System Architecture Round (90 mins)",
+        "description": "Demonstrated deep mastery of raft consensus and distributed write-ahead logs.",
+        "type": "success"
+      },
+      {
+        "id": "TL-4",
+        "stage": "Interview",
+        "date": "2026-08-25",
+        "actor": "Vikram Malhotra (VP Eng)",
+        "title": "Panel Debrief Pending (SLA Breached)",
+        "description": "5 days since interview completion. Scorecard pending submission.",
+        "type": "error"
+      }
+    ],
+    "interviews": [
+      {
+        "interviewer": "Rahul Sharma (Recruiter)",
+        "date": "2026-08-12",
+        "round": "Recruiter Screening",
+        "rating": 5,
+        "recommendation": "Strong Hire",
+        "notes": "Articulate, motivated by high throughput challenges, fits budget expectations.",
+        "technicalSkillsScore": 92,
+        "cultureFitScore": 95,
+        "communicationScore": 94
+      },
+      {
+        "interviewer": "Vikram Malhotra (VP Eng)",
+        "date": "2026-08-18",
+        "round": "System Design & Concurrency",
+        "rating": 4,
+        "recommendation": "Hire",
+        "notes": "Excellent knowledge of cache consistency and distributed locks. Awaiting final signoff notes.",
+        "technicalSkillsScore": 96,
+        "cultureFitScore": 90,
+        "communicationScore": 88
+      }
+    ],
+    "notes": [
+      {
+        "author": "Rahul Sharma",
+        "date": "2026-08-26",
+        "content": "Sent urgent reminder email to Vikram for scorecard wrapup. Candidate has an active competing offer from Datadog."
+      }
+    ]
+  },
+  {
+    "id": "CAN-202",
+    "name": "Elena Rostova",
+    "email": "elena.rostova@designworks.io",
+    "phone": "+1 (212) 641-7890",
+    "positionId": "POS-102",
+    "positionTitle": "Lead Product Designer (Design Systems)",
+    "department": "Design & UX",
+    "currentStage": "Offered",
+    "recruiter": "Priya Nair",
+    "experienceYears": 7,
+    "currentCompany": "Linear UX Labs",
+    "currentDesignation": "Senior UI/UX Systems Architect",
+    "noticePeriodDays": 15,
+    "expectedSalary": "$145,000 / year",
+    "currentSalary": "$130,000 / year",
+    "location": "New York, NY",
+    "qualityScore": 91,
+    "status": "Offer Sent",
+    "matchScore": 93,
+    "skills": ["Design Systems", "Figma Variables", "Tokens Studio", "B2B SaaS Prototyping", "Accessibility"],
+    "timeline": [
+      {
+        "id": "TL-5",
+        "stage": "Sourced",
+        "date": "2026-08-08",
+        "actor": "Priya Nair",
+        "title": "Portfolio Sourced",
+        "description": "Showcased exceptional multi-tenant design system case studies.",
+        "type": "info"
+      },
+      {
+        "id": "TL-6",
+        "stage": "Screening",
+        "date": "2026-08-11",
+        "actor": "Priya Nair",
+        "title": "Initial Cultural Fit Screen",
+        "description": "Passed screening with flying colors.",
+        "type": "success"
+      },
+      {
+        "id": "TL-7",
+        "stage": "Interview",
+        "date": "2026-08-16",
+        "actor": "Ananya Roy (Head of Product)",
+        "title": "Portfolio Presentation & Deep-dive",
+        "description": "Demonstrated component governance and developer handoff workflows.",
+        "type": "success"
+      },
+      {
+        "id": "TL-8",
+        "stage": "Selected",
+        "date": "2026-08-21",
+        "actor": "Ananya Roy",
+        "title": "Panel Final Selection",
+        "description": "Unanimous 'Strong Hire' recommendation by product and design panel.",
+        "type": "success"
+      },
+      {
+        "id": "TL-9",
+        "stage": "Offered",
+        "date": "2026-08-26",
+        "actor": "Priya Nair",
+        "title": "Offer Letter Released",
+        "description": "Offer sent: $140,000 base + 0.1% equity. Candidate requested minor counter.",
+        "type": "warning"
+      }
+    ],
+    "interviews": [
+      {
+        "interviewer": "Ananya Roy (Head of Product)",
+        "date": "2026-08-16",
+        "round": "Portfolio Deep-dive",
+        "rating": 5,
+        "recommendation": "Strong Hire",
+        "notes": "One of the best design system thinkers we have evaluated.",
+        "technicalSkillsScore": 95,
+        "cultureFitScore": 92,
+        "communicationScore": 90
+      }
+    ],
+    "notes": [
+      {
+        "author": "Priya Nair",
+        "date": "2026-08-27",
+        "content": "Spoke with Elena today; she will accept if equity is adjusted from 0.08% to 0.1%. Awaiting CFO sign-off."
+      }
+    ]
+  },
+  {
+    "id": "CAN-203",
+    "name": "Dr. Chen Wei",
+    "email": "chen.wei@aistudios.ai",
+    "phone": "+1 (650) 412-9011",
+    "positionId": "POS-103",
+    "positionTitle": "Senior Machine Learning Engineer (LLM Inference)",
+    "department": "Data & AI",
+    "currentStage": "Accepted",
+    "recruiter": "Rahul Sharma",
+    "experienceYears": 6,
+    "currentCompany": "DeepInference Labs",
+    "currentDesignation": "Staff AI Inference Engineer",
+    "noticePeriodDays": 30,
+    "expectedSalary": "$180,000 / year",
+    "currentSalary": "$160,000 / year",
+    "location": "San Francisco, CA",
+    "qualityScore": 97,
+    "status": "Active",
+    "matchScore": 98,
+    "skills": ["PyTorch", "vLLM", "CUDA C++", "FP8 Quantization", "Triton Server", "TensorRT-LLM"],
+    "timeline": [
+      {
+        "id": "TL-10",
+        "stage": "Sourced",
+        "date": "2026-07-28",
+        "actor": "Rahul Sharma",
+        "title": "Headhunted via GitHub AI Repo",
+        "description": "Key contributor to open source vLLM acceleration algorithms.",
+        "type": "info"
+      },
+      {
+        "id": "TL-11",
+        "stage": "Interview",
+        "date": "2026-08-04",
+        "actor": "Devendra Singh (Director Data)",
+        "title": "CUDA Kernel & Memory Bandwidth Challenge",
+        "description": "Perfect score in live benchmarking and KV cache memory optimization.",
+        "type": "success"
+      },
+      {
+        "id": "TL-12",
+        "stage": "Offered",
+        "date": "2026-08-14",
+        "actor": "Rahul Sharma",
+        "title": "Formal Offer Dispatched",
+        "description": "$180k Base + Sign-on bonus.",
+        "type": "success"
+      },
+      {
+        "id": "TL-13",
+        "stage": "Accepted",
+        "date": "2026-08-18",
+        "actor": "Dr. Chen Wei",
+        "title": "Offer Formally Accepted",
+        "description": "Signed offer contract. Target joining date confirmed as Sep 15.",
+        "type": "success"
+      }
+    ],
+    "interviews": [
+      {
+        "interviewer": "Devendra Singh",
+        "date": "2026-08-04",
+        "round": "Technical Deep Dive",
+        "rating": 5,
+        "recommendation": "Strong Hire",
+        "notes": "Exceptional top 1% talent. Must close immediately.",
+        "technicalSkillsScore": 99,
+        "cultureFitScore": 94,
+        "communicationScore": 92
+      }
+    ],
+    "notes": [
+      {
+        "author": "Rahul Sharma",
+        "date": "2026-08-20",
+        "content": "Onboarding kit sent. Laptop dispatched to SF address."
+      }
+    ]
+  },
+  {
+    "id": "CAN-204",
+    "name": "Marcus Aurelius Vance",
+    "email": "m.vance@austintech.com",
+    "phone": "+1 (512) 330-9182",
+    "positionId": "POS-104",
+    "positionTitle": "Senior Frontend Engineer (Angular & WebGL)",
+    "department": "Engineering",
+    "currentStage": "Screening",
+    "recruiter": "Amit Verma",
+    "experienceYears": 6,
+    "currentCompany": "SaaS Platform Pro",
+    "currentDesignation": "Frontend Specialist",
+    "noticePeriodDays": 15,
+    "expectedSalary": "$130,000 / year",
+    "currentSalary": "$115,000 / year",
+    "location": "Austin, TX",
+    "qualityScore": 86,
+    "status": "Active",
+    "matchScore": 89,
+    "skills": ["Angular 18", "TypeScript", "Tailwind CSS", "RxJS", "Three.js", "Chart.js"],
+    "timeline": [
+      {
+        "id": "TL-14",
+        "stage": "Sourced",
+        "date": "2026-08-24",
+        "actor": "Amit Verma",
+        "title": "Applied through Career Portal",
+        "description": "Direct application with strong GitHub demo projects.",
+        "type": "info"
+      },
+      {
+        "id": "TL-15",
+        "stage": "Screening",
+        "date": "2026-08-27",
+        "actor": "Amit Verma",
+        "title": "Recruiter Call Scheduled",
+        "description": "Screening call scheduled for today afternoon.",
+        "type": "info"
+      }
+    ],
+    "interviews": [],
+    "notes": [
+      {
+        "author": "Amit Verma",
+        "date": "2026-08-27",
+        "content": "Portfolio shows impressive reactive dashboard components."
+      }
+    ]
+  },
+  {
+    "id": "CAN-205",
+    "name": "Sophia Martinez",
+    "email": "sophia.m@salesflow.org",
+    "phone": "+1 (312) 991-0322",
+    "positionId": "POS-105",
+    "positionTitle": "Enterprise Account Executive (Fintech SaaS)",
+    "department": "Sales & BD",
+    "currentStage": "Accepted",
+    "recruiter": "Sneha Patel",
+    "experienceYears": 5,
+    "currentCompany": "PayGlobal Fin",
+    "currentDesignation": "Senior Enterprise AE",
+    "noticePeriodDays": 30,
+    "expectedSalary": "$120,000 base / $240k OTE",
+    "currentSalary": "$105,000 base / $200k OTE",
+    "location": "Chicago, IL",
+    "qualityScore": 88,
+    "status": "Active",
+    "matchScore": 91,
+    "skills": ["MEDDPICC", "Fintech SaaS", "Contract Negotiation", "Quota Exceeding (120%)"],
+    "timeline": [
+      {
+        "id": "TL-16",
+        "stage": "Sourced",
+        "date": "2026-08-04",
+        "actor": "Sneha Patel",
+        "title": "Sourced via Referrals",
+        "description": "Referred by Sales Director.",
+        "type": "info"
+      },
+      {
+        "id": "TL-17",
+        "stage": "Interview",
+        "date": "2026-08-15",
+        "actor": "Kavita Deshmukh",
+        "title": "Mock Pitch & Deal Strategy Round",
+        "description": "Scored top tier in objection handling.",
+        "type": "success"
+      },
+      {
+        "id": "TL-18",
+        "stage": "Accepted",
+        "date": "2026-08-22",
+        "actor": "Sophia Martinez",
+        "title": "Offer Letter Signed",
+        "description": "Background check documents requested.",
+        "type": "warning"
+      }
+    ],
+    "interviews": [
+      {
+        "interviewer": "Kavita Deshmukh (VP Sales)",
+        "date": "2026-08-15",
+        "round": "Sales Pitch & Negotiation",
+        "rating": 4,
+        "recommendation": "Hire",
+        "notes": "Excellent confidence, great domain knowledge in payment gateways.",
+        "technicalSkillsScore": 90,
+        "cultureFitScore": 88,
+        "communicationScore": 94
+      }
+    ],
+    "notes": [
+      {
+        "author": "Sneha Patel",
+        "date": "2026-08-25",
+        "content": "Candidate pending relieving letter from previous employer. Sent 2nd reminder."
+      }
+    ]
+  },
+  {
+    "id": "CAN-206",
+    "name": "Devin O'Connor",
+    "email": "devin.oc@infraops.co",
+    "phone": "+1 (415) 782-1100",
+    "positionId": "POS-106",
+    "positionTitle": "Principal Site Reliability Engineer",
+    "department": "Engineering",
+    "currentStage": "Sourced",
+    "recruiter": "Rahul Sharma",
+    "experienceYears": 11,
+    "currentCompany": "Stripe Infrastructure",
+    "currentDesignation": "Staff SRE",
+    "noticePeriodDays": 45,
+    "expectedSalary": "$180,000 / year",
+    "currentSalary": "$160,000 / year",
+    "location": "San Francisco, CA",
+    "qualityScore": 92,
+    "status": "Active",
+    "matchScore": 95,
+    "skills": ["Terraform", "Kubernetes", "Chaos Engineering", "Incident Postmortems", "AWS Multi-region"],
+    "timeline": [
+      {
+        "id": "TL-19",
+        "stage": "Sourced",
+        "date": "2026-08-26",
+        "actor": "Rahul Sharma",
+        "title": "Candidate Contacted",
+        "description": "Sent InMail with role brief.",
+        "type": "info"
+      }
+    ],
+    "interviews": [],
+    "notes": []
+  },
+  {
+    "id": "CAN-207",
+    "name": "Rohan Deshmukh",
+    "email": "rohan.d@opsanalytica.io",
+    "phone": "+1 (303) 554-9021",
+    "positionId": "POS-107",
+    "positionTitle": "Senior Operations Analyst",
+    "department": "Operations",
+    "currentStage": "Joined",
+    "recruiter": "Priya Nair",
+    "experienceYears": 4,
+    "currentCompany": "TalentOps (Current)",
+    "currentDesignation": "Senior Operations Analyst",
+    "noticePeriodDays": 0,
+    "expectedSalary": "$95,000 / year",
+    "currentSalary": "$95,000 / year",
+    "location": "Denver, CO",
+    "qualityScore": 90,
+    "status": "Joined",
+    "matchScore": 92,
+    "skills": ["SQL", "Looker", "Operations Optimization", "Tableau", "Python"],
+    "timeline": [
+      {
+        "id": "TL-20",
+        "stage": "Joined",
+        "date": "2026-08-20",
+        "actor": "Rohit Joshi",
+        "title": "Onboarding Day 1 Completed",
+        "description": "Successfully completed security induction and team introductions.",
+        "type": "success"
+      }
+    ],
+    "interviews": [],
+    "notes": [
+      {
+        "author": "Rohit Joshi",
+        "date": "2026-08-25",
+        "content": "7-day check-in complete. 100% satisfaction rating on onboarding."
+      }
+    ]
+  },
+  {
+    "id": "CAN-208",
+    "name": "Ananya Kulkarni",
+    "email": "ananya.k@productscale.com",
+    "phone": "+1 (415) 332-8700",
+    "positionId": "POS-108",
+    "positionTitle": "Director of Product Management (Growth & Core)",
+    "department": "Product Management",
+    "currentStage": "Selected",
+    "recruiter": "Sneha Patel",
+    "experienceYears": 12,
+    "currentCompany": "Atlassian Cloud",
+    "currentDesignation": "Group Product Manager",
+    "noticePeriodDays": 30,
+    "expectedSalary": "$195,000 / year",
+    "currentSalary": "$175,000 / year",
+    "location": "San Francisco, CA",
+    "qualityScore": 95,
+    "status": "Active",
+    "matchScore": 97,
+    "skills": ["Product-Led Growth", "Monetization Strategy", "Team Leadership (12 PMs)", "Enterprise B2B"],
+    "timeline": [
+      {
+        "id": "TL-21",
+        "stage": "Interview",
+        "date": "2026-08-22",
+        "actor": "Ananya Roy (Head of Product)",
+        "title": "Executive Presentation Round",
+        "description": "Outstanding roadmap vision and monetization framework.",
+        "type": "success"
+      },
+      {
+        "id": "TL-22",
+        "stage": "Selected",
+        "date": "2026-08-26",
+        "actor": "Sneha Patel",
+        "title": "Selected for Formal Offer",
+        "description": "Compensation committee approval initiated.",
+        "type": "success"
+      }
+    ],
+    "interviews": [
+      {
+        "interviewer": "Ananya Roy",
+        "date": "2026-08-22",
+        "round": "Product Roadmap Presentation",
+        "rating": 5,
+        "recommendation": "Strong Hire",
+        "notes": "Visionary leader with high operational discipline.",
+        "technicalSkillsScore": 98,
+        "cultureFitScore": 95,
+        "communicationScore": 96
+      }
+    ],
+    "notes": []
+  }
+]

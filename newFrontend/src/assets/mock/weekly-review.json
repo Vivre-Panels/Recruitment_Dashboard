@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "weekNumber": "CW-35 (2026)",
+    "startDate": "2026-08-24",
+    "endDate": "2026-08-30",
+    "plannedClosures": 6,
+    "actualClosures": 4,
+    "redP0PositionsCount": 3,
+    "openBottlenecksCount": 5,
+    "closureRatePct": 66.7,
+    "slaBreachCount": 2,
+    "keyHighlights": [
+      "2 Senior AI Engineer offers successfully accepted (Dr. Chen Wei & teammate).",
+      "Operations Analyst positions 100% fulfilled ahead of schedule.",
+      "Go Backend Architect position delayed due to HM travel & panel debrief backlog."
+    ],
+    "criticalRisks": [
+      {
+        "positionTitle": "Staff Backend Architect (Go / Cloud)",
+        "department": "Engineering",
+        "issue": "Interview feedback SLA breached (5 days pending with VP Eng). Competing Datadog offer expires Friday.",
+        "owner": "Rahul Sharma",
+        "daysPending": 5
+      },
+      {
+        "positionTitle": "Principal Site Reliability Engineer",
+        "department": "Engineering",
+        "issue": "Sourcing funnel stalled below target volume. Only 5 active candidates.",
+        "owner": "Rahul Sharma",
+        "daysPending": 6
+      },
+      {
+        "positionTitle": "Lead Product Designer (Design Systems)",
+        "department": "Design & UX",
+        "issue": "Counter-offer equity exception approval pending with CFO/Finance for 3 days.",
+        "owner": "Priya Nair",
+        "daysPending": 3
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "ACT-101",
+      "issue": "Interview feedback SLA breached on POS-101 for top candidate Arjun Sundaram",
+      "positionId": "POS-101",
+      "positionTitle": "Staff Backend Architect",
+      "decision": "VP Eng (Vikram) to complete async scorecard debrief by 5 PM today; issue expedited offer letter.",
+      "owner": "Vikram Malhotra",
+      "dueDate": "2026-08-28",
+      "priority": "P0",
+      "status": "In Progress",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "id": "ACT-102",
+      "issue": "SRE position sourcing bottleneck (low pipeline density)",
+      "positionId": "POS-106",
+      "positionTitle": "Principal SRE",
+      "decision": "Engage specialized infra search partner (InfraTalent) and sponsor targeted GitHub event ad.",
+      "owner": "Rahul Sharma",
+      "dueDate": "2026-09-02",
+      "priority": "P0",
+      "status": "Pending",
+      "createdAt": "2026-08-27"
+    },
+    {
+      "id": "ACT-103",
+      "issue": "Lead Designer equity counter-offer approval delay",
+      "positionId": "POS-102",
+      "positionTitle": "Lead Product Designer",
+      "decision": "Approve +0.02% equity adjustment within executive delegation matrix to prevent candidate drop-off.",
+      "owner": "Ananya Roy",
+      "dueDate": "2026-08-28",
+      "priority": "P0",
+      "status": "Resolved",
+      "createdAt": "2026-08-26"
+    },
+    {
+      "id": "ACT-104",
+      "issue": "BGV verification delay for Enterprise AE candidate",
+      "positionId": "POS-105",
+      "positionTitle": "Enterprise Account Executive",
+      "decision": "Accept provisional bank salary credit statements pending final relieving letter from previous employer.",
+      "owner": "Sneha Patel",
+      "dueDate": "2026-08-29",
+      "priority": "P1",
+      "status": "In Progress",
+      "createdAt": "2026-08-26"
+    }
+  ]
+}

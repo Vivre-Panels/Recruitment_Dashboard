@@ -1,0 +1,331 @@
+[
+  {
+    "id": "POS-101",
+    "title": "Staff Backend Architect (Go / Cloud)",
+    "department": "Engineering",
+    "requiredHc": 3,
+    "joinedHc": 1,
+    "priority": "P0",
+    "owner": "Rahul Sharma",
+    "recruiterId": "REC-1",
+    "hiringManager": "Vikram Malhotra (VP Eng)",
+    "targetDate": "2026-09-15",
+    "createdAt": "2026-08-01",
+    "salaryRange": "$140k - $175k",
+    "location": "San Francisco, CA (Hybrid)",
+    "experienceRange": "8 - 12 Years",
+    "status": "Critical",
+    "mustHaveSkills": ["Golang", "Distributed Systems", "Kubernetes", "gRPC", "Kafka"],
+    "knockoutCriteria": [
+      "Less than 7 years backend experience",
+      "No hands-on experience scaling systems to >50k RPS",
+      "Non-negotiable notice period > 60 days"
+    ],
+    "description": "Lead architecture and high-throughput transaction pipelines across global edge datacenters.",
+    "funnelCounts": {
+      "sourced": 42,
+      "screened": 24,
+      "interviewed": 9,
+      "selected": 2,
+      "offered": 2,
+      "accepted": 1,
+      "joined": 1
+    },
+    "bottleneck": {
+      "stage": "Interview",
+      "issue": "Pending Tech Interview Feedback & Panel Scheduling",
+      "pendingWith": "Vikram Malhotra (VP Eng)",
+      "pendingSinceDays": 5,
+      "slaStatus": "Breached",
+      "remark": "Hiring manager travel delayed final panel debrief by 4 days."
+    },
+    "activeCandidatesCount": 14
+  },
+  {
+    "id": "POS-102",
+    "title": "Lead Product Designer (Design Systems)",
+    "department": "Design & UX",
+    "requiredHc": 1,
+    "joinedHc": 0,
+    "priority": "P0",
+    "owner": "Priya Nair",
+    "recruiterId": "REC-2",
+    "hiringManager": "Ananya Roy (Head of Product)",
+    "targetDate": "2026-09-20",
+    "createdAt": "2026-08-05",
+    "salaryRange": "$125k - $150k",
+    "location": "New York, NY (Remote)",
+    "experienceRange": "6 - 9 Years",
+    "status": "At Risk",
+    "mustHaveSkills": ["Figma Variables", "Multi-brand Tokens", "Complex B2B SaaS UX", "Prototyping"],
+    "knockoutCriteria": [
+      "No portfolio showing enterprise system design",
+      "Experience only in agency/B2C landing pages"
+    ],
+    "description": "Standardize cross-platform design tokens and govern enterprise workflow design components.",
+    "funnelCounts": {
+      "sourced": 28,
+      "screened": 14,
+      "interviewed": 6,
+      "selected": 2,
+      "offered": 1,
+      "accepted": 0,
+      "joined": 0
+    },
+    "bottleneck": {
+      "stage": "Offer",
+      "issue": "Candidate salary expectation negotiation pending approval",
+      "pendingWith": "Finance & Legal",
+      "pendingSinceDays": 3,
+      "slaStatus": "At Risk",
+      "remark": "Candidate counter-offered +10% equity buffer."
+    },
+    "activeCandidatesCount": 7
+  },
+  {
+    "id": "POS-103",
+    "title": "Senior Machine Learning Engineer (LLM Inference)",
+    "department": "Data & AI",
+    "requiredHc": 4,
+    "joinedHc": 2,
+    "priority": "P0",
+    "owner": "Rahul Sharma",
+    "recruiterId": "REC-1",
+    "hiringManager": "Devendra Singh (Director Data)",
+    "targetDate": "2026-09-30",
+    "createdAt": "2026-07-20",
+    "salaryRange": "$160k - $190k",
+    "location": "San Francisco, CA (Onsite)",
+    "experienceRange": "5 - 8 Years",
+    "status": "On Track",
+    "mustHaveSkills": ["PyTorch", "vLLM / TensorRT-LLM", "CUDA", "Model Quantization", "Ray"],
+    "knockoutCriteria": [
+      "No direct experience in LLM serving optimization",
+      "Pure data analyst background"
+    ],
+    "description": "Optimize latency and token throughput for large multimodal foundational models.",
+    "funnelCounts": {
+      "sourced": 56,
+      "screened": 30,
+      "interviewed": 14,
+      "selected": 5,
+      "offered": 3,
+      "accepted": 3,
+      "joined": 2
+    },
+    "bottleneck": {
+      "stage": "Selected",
+      "issue": "Offer Rollout in preparation",
+      "pendingWith": "Rahul Sharma",
+      "pendingSinceDays": 1,
+      "slaStatus": "Within SLA",
+      "remark": "Offer letters scheduled for release on Friday."
+    },
+    "activeCandidatesCount": 11
+  },
+  {
+    "id": "POS-104",
+    "title": "Senior Frontend Engineer (Angular & WebGL)",
+    "department": "Engineering",
+    "requiredHc": 2,
+    "joinedHc": 1,
+    "priority": "P1",
+    "owner": "Amit Verma",
+    "recruiterId": "REC-3",
+    "hiringManager": "Vikram Malhotra (VP Eng)",
+    "targetDate": "2026-10-05",
+    "createdAt": "2026-08-10",
+    "salaryRange": "$115k - $140k",
+    "location": "Austin, TX (Hybrid)",
+    "experienceRange": "5 - 8 Years",
+    "status": "On Track",
+    "mustHaveSkills": ["Angular 18+", "TypeScript", "Tailwind CSS", "RxJS / Signals", "Performance Profiling"],
+    "knockoutCriteria": [
+      "Less than 3 years modern Angular experience",
+      "Weak understanding of reactive state management"
+    ],
+    "description": "Build high-density operations dashboards and interactive control tower monitoring views.",
+    "funnelCounts": {
+      "sourced": 38,
+      "screened": 19,
+      "interviewed": 8,
+      "selected": 3,
+      "offered": 2,
+      "accepted": 1,
+      "joined": 1
+    },
+    "bottleneck": {
+      "stage": "Interview",
+      "issue": "Technical Coding Round 2 scheduling",
+      "pendingWith": "Candidate",
+      "pendingSinceDays": 2,
+      "slaStatus": "Within SLA",
+      "remark": "Slot confirmation requested for tomorrow."
+    },
+    "activeCandidatesCount": 6
+  },
+  {
+    "id": "POS-105",
+    "title": "Enterprise Account Executive (Fintech SaaS)",
+    "department": "Sales & BD",
+    "requiredHc": 2,
+    "joinedHc": 0,
+    "priority": "P1",
+    "owner": "Sneha Patel",
+    "recruiterId": "REC-4",
+    "hiringManager": "Kavita Deshmukh (VP Sales)",
+    "targetDate": "2026-09-25",
+    "createdAt": "2026-08-02",
+    "salaryRange": "$100k - $130k base + uncapped OTE",
+    "location": "Chicago, IL (Remote)",
+    "experienceRange": "4 - 7 Years",
+    "status": "At Risk",
+    "mustHaveSkills": ["MEDDPICC", "Enterprise B2B SaaS", "Deal Size >$150k ARR", "Salesforce CRM"],
+    "knockoutCriteria": [
+      "SMB only sales experience",
+      "Quota achievement below 85% in past 2 years"
+    ],
+    "description": "Close Tier-1 banking and fintech enterprise contracts across North America.",
+    "funnelCounts": {
+      "sourced": 34,
+      "screened": 16,
+      "interviewed": 5,
+      "selected": 1,
+      "offered": 1,
+      "accepted": 0,
+      "joined": 0
+    },
+    "bottleneck": {
+      "stage": "Accepted",
+      "issue": "Background Verification pending candidate document submission",
+      "pendingWith": "Candidate",
+      "pendingSinceDays": 4,
+      "slaStatus": "At Risk",
+      "remark": "Candidate has been sent 2 automated nudges for reliving letters."
+    },
+    "activeCandidatesCount": 8
+  },
+  {
+    "id": "POS-106",
+    "title": "Principal Site Reliability Engineer",
+    "department": "Engineering",
+    "requiredHc": 2,
+    "joinedHc": 1,
+    "priority": "P0",
+    "owner": "Rahul Sharma",
+    "recruiterId": "REC-1",
+    "hiringManager": "Vikram Malhotra (VP Eng)",
+    "targetDate": "2026-09-18",
+    "createdAt": "2026-07-28",
+    "salaryRange": "$150k - $185k",
+    "location": "San Francisco, CA (Hybrid)",
+    "experienceRange": "9 - 14 Years",
+    "status": "Critical",
+    "mustHaveSkills": ["Terraform", "AWS / GCP Multi-region", "Prometheus / Grafana", "Incident Management", "Chaos Eng"],
+    "knockoutCriteria": [
+      "No experience with 99.99% uptime production systems",
+      "No automation scripting proficiency"
+    ],
+    "description": "Architect zero-downtime automated failover mechanisms across global infrastructure.",
+    "funnelCounts": {
+      "sourced": 25,
+      "screened": 11,
+      "interviewed": 4,
+      "selected": 1,
+      "offered": 1,
+      "accepted": 1,
+      "joined": 1
+    },
+    "bottleneck": {
+      "stage": "Screening",
+      "issue": "Low candidate pipeline volume in current market",
+      "pendingWith": "Rahul Sharma",
+      "pendingSinceDays": 6,
+      "slaStatus": "Breached",
+      "remark": "Need proactive headhunting & outreach enhancement."
+    },
+    "activeCandidatesCount": 5
+  },
+  {
+    "id": "POS-107",
+    "title": "Senior Operations Analyst",
+    "department": "Operations",
+    "requiredHc": 2,
+    "joinedHc": 2,
+    "priority": "P2",
+    "owner": "Priya Nair",
+    "recruiterId": "REC-2",
+    "hiringManager": "Rohit Joshi (Operations Lead)",
+    "targetDate": "2026-09-10",
+    "createdAt": "2026-08-01",
+    "salaryRange": "$85k - $105k",
+    "location": "Denver, CO (Hybrid)",
+    "experienceRange": "3 - 5 Years",
+    "status": "On Track",
+    "mustHaveSkills": ["SQL", "Tableau / Looker", "Process Optimization", "Six Sigma Basics"],
+    "knockoutCriteria": [
+      "No SQL proficiency",
+      "Less than 2 years analytics experience"
+    ],
+    "description": "Analyze cross-functional operational turnaround times and cost optimization models.",
+    "funnelCounts": {
+      "sourced": 32,
+      "screened": 18,
+      "interviewed": 7,
+      "selected": 3,
+      "offered": 2,
+      "accepted": 2,
+      "joined": 2
+    },
+    "bottleneck": {
+      "stage": "Joined",
+      "issue": "Completed & 30-Day Onboarding in progress",
+      "pendingWith": "HR Operations",
+      "pendingSinceDays": 0,
+      "slaStatus": "Within SLA",
+      "remark": "All headcount targets closed ahead of deadline."
+    },
+    "activeCandidatesCount": 0
+  },
+  {
+    "id": "POS-108",
+    "title": "Director of Product Management (Growth & Core)",
+    "department": "Product Management",
+    "requiredHc": 1,
+    "joinedHc": 0,
+    "priority": "P0",
+    "owner": "Sneha Patel",
+    "recruiterId": "REC-4",
+    "hiringManager": "Ananya Roy (Head of Product)",
+    "targetDate": "2026-10-15",
+    "createdAt": "2026-08-15",
+    "salaryRange": "$170k - $210k",
+    "location": "San Francisco, CA (Hybrid)",
+    "experienceRange": "10 - 15 Years",
+    "status": "On Track",
+    "mustHaveSkills": ["Product Led Growth", "Enterprise Monetization", "Roadmap Strategy", "Team Mentorship"],
+    "knockoutCriteria": [
+      "No experience leading PM teams of >5 people",
+      "Pure project management background"
+    ],
+    "description": "Drive product-led expansion, conversion optimization, and core customer lifecycle mechanics.",
+    "funnelCounts": {
+      "sourced": 29,
+      "screened": 12,
+      "interviewed": 5,
+      "selected": 2,
+      "offered": 0,
+      "accepted": 0,
+      "joined": 0
+    },
+    "bottleneck": {
+      "stage": "Interview",
+      "issue": "Executive Presentation Round pending leadership calendar alignment",
+      "pendingWith": "Ananya Roy (Head of Product)",
+      "pendingSinceDays": 2,
+      "slaStatus": "Within SLA",
+      "remark": "Interview booked for this Thursday 3 PM."
+    },
+    "activeCandidatesCount": 5
+  }
+]
