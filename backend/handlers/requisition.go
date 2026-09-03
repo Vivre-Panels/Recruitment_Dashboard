@@ -57,6 +57,7 @@ func CreateRequisition(c *gin.Context) {
 			UPDATE SET
 				[Job_Opening_ID] = @p2,
 				[Department] = @p3,
+				[Team] = ISNULL(@p23, target.[Team]),
 				[Job_Description] = @p4,
 				[Job_Title] = @p5,
 				[No_Of_Openings] = @p6,
@@ -78,12 +79,12 @@ func CreateRequisition(c *gin.Context) {
 				[Action_Owner] = ISNULL(@p22, target.[Action_Owner]),
 				[UpdatedAt] = GETUTCDATE()
 		WHEN NOT MATCHED THEN
-			INSERT ([Requisition_ID], [Job_Opening_ID], [Department], [Job_Description],
+			INSERT ([Requisition_ID], [Job_Opening_ID], [Department], [Team], [Job_Description],
 				[Job_Title], [No_Of_Openings], [Opening_Date], [Recruiter_Name],
 				[Status], [Target_Date], [Hiring_Manager], [Priority], [Salary_Range],
 				[Location], [Experience_Required], [Preferred_Industries], [Must_Haves],
 				[Knockout_Criteria], [Bottleneck_Type], [Pending_Since], [Remarks], [Action_Owner])
-			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22)
+			VALUES (@p1, @p2, @p3, @p23, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22)
 		OUTPUT INSERTED.[Id];`
 
 	var newID int64
@@ -110,6 +111,7 @@ func CreateRequisition(c *gin.Context) {
 		req.PendingSince,
 		req.Remarks,
 		req.ActionOwner,
+		req.Team,
 	).Scan(&newID)
 
 	if err != nil {
@@ -179,7 +181,7 @@ func GetRequisitions(c *gin.Context) {
 	}
 
 	whereStmt := strings.Join(whereClauses, " AND ")
-	query := fmt.Sprintf(`SELECT [Id], [Job_Opening_ID], [Requisition_ID], [Department], [Job_Description],
+	query := fmt.Sprintf(`SELECT [Id], [Job_Opening_ID], [Requisition_ID], [Department], ISNULL([Team], '') AS Team, [Job_Description],
 		[Job_Title], [No_Of_Openings], [Opening_Date], [Recruiter_Name],
 		[Status], [Target_Date], [Hiring_Manager], [Priority], [Salary_Range], [Location],
 		[Experience_Required], [Preferred_Industries], [Must_Haves], [Knockout_Criteria],

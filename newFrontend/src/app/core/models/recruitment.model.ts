@@ -33,6 +33,7 @@ export interface Position {
   id: string;
   title: string;
   department: string;
+  team?: string;
   requiredHc: number;
   joinedHc: number;
   priority: PriorityLevel;

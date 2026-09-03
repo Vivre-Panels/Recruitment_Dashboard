@@ -7,6 +7,7 @@ type Requisition struct {
 	JobOpeningID  interface{} `json:"Job_Opening_ID" db:"Job_Opening_ID"`
 	RequisitionID interface{} `json:"Requisition_ID" db:"Requisition_ID"`
 	Department    *string   `json:"Department" db:"Department"`
+	Team          *string   `json:"Team" db:"Team"`
 	JobDescription *string  `json:"Job_Description" db:"Job_Description"`
 	JobTitle      *string   `json:"Job_Title" db:"Job_Title"`
 	NoOfOpenings  interface{} `json:"No_Of_Openings" db:"No_Of_Openings"`

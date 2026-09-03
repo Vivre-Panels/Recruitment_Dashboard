@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-analytics-sla',
@@ -28,7 +29,8 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
     IconComponent,
     EmptyStateComponent,
     DrawerComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    PaginationComponent
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -111,7 +113,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr 
-                *ngFor="let s of filteredSlas()"
+                *ngFor="let s of paginatedSlas()"
                 (click)="openDrawer(s)"
                 class="hover:bg-slate-50/80 transition-colors cursor-pointer"
               >
@@ -158,6 +160,16 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             actionLabel="Reset Filter"
             (actionClick)="resetFilters()"
           ></app-empty-state>
+
+          <!-- Reusable Pagination Component -->
+          <app-pagination
+            *ngIf="filteredSlas().length > 0"
+            [totalItems]="filteredSlas().length"
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            (pageChange)="onPageChange($event)"
+            (pageSizeChange)="onPageSizeChange($event)"
+          ></app-pagination>
         </div>
       </div>
 
@@ -236,6 +248,9 @@ export class AnalyticsSlaComponent {
   isDrawerOpen = false;
   selectedSla?: SlaRecord;
 
+  currentPage = signal(1);
+  pageSize = signal(10);
+
   filteredSlas = computed(() => {
     return this.slaService.slaRecords().filter(s => {
       const matchesSearch = !this.searchTerm ||
@@ -248,6 +263,21 @@ export class AnalyticsSlaComponent {
       return matchesSearch && matchesStatus;
     });
   });
+
+  paginatedSlas = computed(() => {
+    const list = this.filteredSlas();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
+  });
+
+  onPageChange(page: number) {
+    this.currentPage.set(page);
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
 
   openDrawer(s: SlaRecord) {
     this.selectedSla = s;
@@ -274,5 +304,6 @@ export class AnalyticsSlaComponent {
   resetFilters() {
     this.searchTerm = '';
     this.selectedStatus = 'ALL';
+    this.currentPage.set(1);
   }
 }

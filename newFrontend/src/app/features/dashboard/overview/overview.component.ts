@@ -120,10 +120,10 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
           </div>
 
           <a 
-            routerLink="/dashboard/control-tower" 
+            routerLink="/recruitment/requisitions" 
             class="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1"
           >
-            View All Control Tower →
+            View All Requisitions →
           </a>
         </div>
 
@@ -192,11 +192,11 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             <thead>
               <tr class="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 <th class="py-3.5 px-4">Position</th>
+                <th class="py-3.5 px-3">Department</th>
                 <th class="py-3.5 px-3 text-center">Priority</th>
                 <th class="py-3.5 px-3 text-center">Progress</th>
                 <th class="py-3.5 px-3">Target Date</th>
                 <th class="py-3.5 px-3 text-center">Status</th>
-                <th class="py-3.5 px-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
@@ -208,7 +208,12 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
                 <!-- Position -->
                 <td class="py-3.5 px-4 font-medium text-slate-900">
                   <div class="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">{{ pos.title }}</div>
-                  <div class="text-[11px] text-slate-500 mt-0.5">{{ pos.department }} • Owner: <strong class="text-slate-700">{{ pos.owner }}</strong></div>
+                  <div class="text-[11px] text-slate-500 mt-0.5">Owner: <strong class="text-slate-700">{{ pos.owner }}</strong></div>
+                </td>
+
+                <!-- Department -->
+                <td class="py-3.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
+                  {{ pos.department }}
                 </td>
 
                 <!-- Priority -->
@@ -230,17 +235,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
                 <!-- Status -->
                 <td class="py-3.5 px-3 text-center">
                   <app-status-badge [status]="pos.status"></app-status-badge>
-                </td>
-
-                <!-- Action -->
-                <td class="py-3.5 px-4 text-right" (click)="$event.stopPropagation()">
-                  <button
-                    type="button"
-                    (click)="openDrawer(pos)"
-                    class="px-3.5 py-1.5 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 font-bold rounded-lg text-xs transition-colors cursor-pointer"
-                  >
-                    View
-                  </button>
                 </td>
               </tr>
             </tbody>

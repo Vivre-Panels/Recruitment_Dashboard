@@ -86,6 +86,7 @@ func RunMigrations() {
 				[Job_Opening_ID] NVARCHAR(255) NULL,
 				[Requisition_ID] NVARCHAR(255) NULL,
 				[Department] NVARCHAR(255) NULL,
+				[Team] NVARCHAR(255) NULL,
 				[Job_Description] NVARCHAR(MAX) NULL,
 				[Job_Title] NVARCHAR(500) NULL,
 				[No_Of_Openings] INT NULL,
@@ -200,6 +201,7 @@ func RunMigrations() {
 	}
 
 	reqColumns := map[string]string{
+		"Team":                 "NVARCHAR(255) NULL",
 		"Hiring_Manager":       "NVARCHAR(255) NULL",
 		"Priority":             "NVARCHAR(10) NULL",
 		"Salary_Range":         "NVARCHAR(255) NULL",

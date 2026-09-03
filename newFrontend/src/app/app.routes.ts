@@ -28,6 +28,13 @@ export const routes: Routes = [
       },
       // Recruitment Routes
       {
+        path: 'recruitment/requisitions',
+        loadComponent: () =>
+          import('./features/recruitment/requisitions/requisitions.component').then(
+            m => m.RecruitmentRequisitionsComponent
+          )
+      },
+      {
         path: 'recruitment/positions',
         loadComponent: () =>
           import('./features/recruitment/positions/positions.component').then(

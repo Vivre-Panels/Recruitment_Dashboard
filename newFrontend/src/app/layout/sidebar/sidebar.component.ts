@@ -51,20 +51,36 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
 
       <!-- Concise Module Navigation Links -->
       <div class="flex-1 overflow-y-auto py-4 px-2 space-y-1.5 custom-sidebar-scroll">
-        <a
-          *ngFor="let module of navModules"
-          [routerLink]="module.route"
-          (click)="linkClicked.emit()"
-          routerLinkActive="bg-brand-500/15 text-brand-400 font-bold border-r-2 border-brand-500"
-          class="flex items-center px-3 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 transition-all duration-150 group cursor-pointer"
-          [ngClass]="isCollapsed ? 'justify-center px-0' : 'justify-between'"
-          [title]="isCollapsed ? module.label : ''"
-        >
-          <div class="flex items-center gap-3 min-w-0" [ngClass]="{ 'justify-center': isCollapsed }">
-            <app-icon [name]="module.icon" [size]="20" class="text-slate-400 group-hover:text-brand-400 transition-colors shrink-0"></app-icon>
-            <span *ngIf="!isCollapsed" class="truncate text-xs font-bold tracking-tight">{{ module.label }}</span>
+        <ng-container *ngFor="let module of navModules">
+          <!-- Module Main Link -->
+          <a
+            [routerLink]="module.route"
+            (click)="linkClicked.emit()"
+            routerLinkActive="bg-brand-500/15 text-brand-400 font-bold border-r-2 border-brand-500"
+            class="flex items-center px-3 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 transition-all duration-150 group cursor-pointer"
+            [ngClass]="isCollapsed ? 'justify-center px-0' : 'justify-between'"
+            [title]="isCollapsed ? module.label : ''"
+          >
+            <div class="flex items-center gap-3 min-w-0" [ngClass]="{ 'justify-center': isCollapsed }">
+              <app-icon [name]="module.icon" [size]="20" class="text-slate-400 group-hover:text-brand-400 transition-colors shrink-0"></app-icon>
+              <span *ngIf="!isCollapsed" class="truncate text-xs font-bold tracking-tight">{{ module.label }}</span>
+            </div>
+          </a>
+
+          <!-- Sub-children routes when expanded -->
+          <div *ngIf="!isCollapsed && module.children && isRouteActive(module.route)" class="pl-7 space-y-1 py-1">
+            <a
+              *ngFor="let child of module.children"
+              [routerLink]="child.route"
+              (click)="linkClicked.emit()"
+              routerLinkActive="text-brand-400 font-bold bg-slate-800/90"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-colors"
+            >
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+              <span class="truncate">{{ child.label }}</span>
+            </a>
           </div>
-        </a>
+        </ng-container>
       </div>
 
       <!-- Recruiter Performance Pill Footer -->
@@ -99,10 +115,17 @@ export class SidebarComponent {
   @Output() isCollapsedChange = new EventEmitter<boolean>();
   @Output() linkClicked = new EventEmitter<void>();
 
+  private router = inject(Router);
   navModules = NAV_MODULES;
 
   toggleCollapse() {
     this.isCollapsed = !this.isCollapsed;
     this.isCollapsedChange.emit(this.isCollapsed);
+  }
+
+  isRouteActive(baseRoute: string): boolean {
+    const current = this.router.url;
+    const prefix = baseRoute.split('/')[1];
+    return current.includes(`/${prefix}/`);
   }
 }

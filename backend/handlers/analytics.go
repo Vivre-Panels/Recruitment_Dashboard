@@ -193,6 +193,7 @@ func GetControlTower(c *gin.Context) {
 		RequisitionID string                 `json:"requisition_id"`
 		JobTitle      string                 `json:"job_title"`
 		Department    string                 `json:"department"`
+		Team          string                 `json:"team"`
 		RequiredHC    int                    `json:"required_hc"`
 		Priority      string                 `json:"priority"`
 		Owner         string                 `json:"owner"`
@@ -213,6 +214,7 @@ func GetControlTower(c *gin.Context) {
 			ISNULL(CAST(r.[Requisition_ID] AS NVARCHAR(255)), '') AS Requisition_ID,
 			ISNULL(r.[Job_Title], '') AS Job_Title,
 			ISNULL(r.[Department], '') AS Department,
+			ISNULL(r.[Team], '') AS Team,
 			ISNULL(r.[No_Of_Openings], 1) AS Required_HC,
 			ISNULL(r.[Priority], 'P1') AS Priority,
 			ISNULL(r.[Recruiter_Name], '') AS Owner,

@@ -4,6 +4,7 @@ export interface NavItem {
   route: string;
   badge?: string;
   badgeType?: 'danger' | 'warning' | 'success' | 'info';
+  children?: NavItem[];
 }
 
 export const NAV_MODULES: NavItem[] = [
@@ -15,7 +16,14 @@ export const NAV_MODULES: NavItem[] = [
   {
     label: 'Recruitment',
     icon: 'briefcase',
-    route: '/recruitment/positions'
+    route: '/recruitment/requisitions',
+    children: [
+      { label: 'All Requisitions', icon: 'file-text', route: '/recruitment/requisitions' },
+      { label: 'Positions', icon: 'briefcase', route: '/recruitment/positions' },
+      { label: 'Candidates', icon: 'users', route: '/recruitment/candidates' },
+      { label: 'Requirements', icon: 'list', route: '/recruitment/requirements' },
+      { label: 'Talent Bank', icon: 'database', route: '/recruitment/talent-bank' }
+    ]
   },
   {
     label: 'Analytics',

@@ -13,6 +13,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { environment } from '../../../../environments/environment';
 
 interface TalentCandidate {
@@ -43,7 +44,8 @@ interface TalentCandidate {
     IconComponent,
     ModalComponent,
     EmptyStateComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    PaginationComponent
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -129,7 +131,7 @@ interface TalentCandidate {
       <!-- Talent Cards Grid -->
       <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <div
-          *ngFor="let t of filteredTalents()"
+          *ngFor="let t of paginatedTalents()"
           class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
         >
           <div>
@@ -206,6 +208,16 @@ interface TalentCandidate {
         actionLabel="Reset Filters"
         (actionClick)="resetFilters()"
       ></app-empty-state>
+
+      <!-- Reusable Pagination Component -->
+      <app-pagination
+        *ngIf="!isLoading() && filteredTalents().length > 0"
+        [totalItems]="filteredTalents().length"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      ></app-pagination>
 
       <!-- Assign Candidate Modal -->
       <app-modal
@@ -325,6 +337,9 @@ export class RecruitmentTalentBankComponent implements OnInit {
   selectedTalent?: TalentCandidate;
   targetPositionId = 'POS-101';
 
+  currentPage = signal(1);
+  pageSize = signal(12);
+
   ngOnInit() {
     this.loadTalentBank();
   }
@@ -399,6 +414,21 @@ export class RecruitmentTalentBankComponent implements OnInit {
     });
   });
 
+  paginatedTalents = computed(() => {
+    const list = this.filteredTalents();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
+  });
+
+  onPageChange(page: number) {
+    this.currentPage.set(page);
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+
   openTalentProfile(t: TalentCandidate) {
     this.selectedTalent = t;
     this.isProfileModalOpen = true;
@@ -438,5 +468,6 @@ export class RecruitmentTalentBankComponent implements OnInit {
     this.selectedDepartment.set('ALL');
     this.selectedExperience.set('ALL');
     this.selectedAvailability.set('ALL');
+    this.currentPage.set(1);
   }
 }

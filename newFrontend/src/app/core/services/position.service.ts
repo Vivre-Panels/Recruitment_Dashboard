@@ -81,6 +81,7 @@ export class PositionService {
       id: item.job_opening_id || item.requisition_id || `POS-${item.id}`,
       title: item.job_title || 'Untitled Position',
       department: item.department || 'Engineering',
+      team: item.team || item.Team || '',
       requiredHc: item.required_hc || 1,
       joinedHc: funnel.joined || 0,
       priority: (item.priority as PriorityLevel) || 'P1',
