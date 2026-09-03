@@ -44,7 +44,7 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
           (click)="isMobileSidebarOpen = false"
         ></div>
         <div class="relative flex-1 flex flex-col max-w-xs w-full bg-slate-900">
-          <app-sidebar [isCollapsed]="false"></app-sidebar>
+          <app-sidebar [isCollapsed]="false" (linkClicked)="isMobileSidebarOpen = false"></app-sidebar>
         </div>
       </div>
 

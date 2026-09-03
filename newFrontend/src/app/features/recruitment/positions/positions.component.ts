@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-recruitment-positions',
@@ -28,7 +30,9 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
     IconComponent,
     EmptyStateComponent,
     DrawerComponent,
-    ViewSwitcherTabsComponent
+    ViewSwitcherTabsComponent,
+    LoadingStateComponent,
+    PaginationComponent
   ],
   template: `
     <div class="app-page-container">
@@ -46,8 +50,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
       <div class="app-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex-1 max-w-md">
           <app-search-input
-            [value]="searchTerm"
-            (valueChange)="searchTerm = $event"
+            [value]="searchTerm()"
+            (valueChange)="searchTerm.set($event)"
             placeholder="Search position title, ID, recruiter..."
           ></app-search-input>
         </div>
@@ -66,7 +70,7 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           </button>
 
           <button
-            *ngIf="activeFilterCount() > 0 || searchTerm"
+            *ngIf="activeFilterCount() > 0 || searchTerm()"
             type="button"
             (click)="resetFilters()"
             class="text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-1 cursor-pointer"
@@ -78,22 +82,36 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
 
       <!-- Positions Directory Read-Only Table -->
       <div class="app-card p-0 overflow-hidden">
-        <div class="overflow-x-auto">
+        <app-loading-state *ngIf="positionService.isLoading()" type="table" [rows]="6"></app-loading-state>
+
+        <div *ngIf="!positionService.isLoading()" class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr>
-                <th class="app-table-th">Position Title</th>
-                <th class="app-table-th">Department</th>
-                <th class="app-table-th text-center">Priority</th>
-                <th class="app-table-th text-center">Headcount</th>
-                <th class="app-table-th">Target Date</th>
-                <th class="app-table-th text-center">Status</th>
+                <th (click)="setSort('title')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Position Title <span *ngIf="sortField() === 'title'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('department')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Department <span *ngIf="sortField() === 'department'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('priority')" class="app-table-th text-center cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Priority <span *ngIf="sortField() === 'priority'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('requiredHc')" class="app-table-th text-center cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Headcount <span *ngIf="sortField() === 'requiredHc'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('targetDate')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Target Date <span *ngIf="sortField() === 'targetDate'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('status')" class="app-table-th text-center cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Status <span *ngIf="sortField() === 'status'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
                 <th class="app-table-th text-right">View Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr 
-                *ngFor="let pos of filteredPositions()"
+                *ngFor="let pos of paginatedPositions()"
                 (click)="openDrawer(pos)"
                 class="hover:bg-slate-50/80 transition-colors cursor-pointer group"
               >
@@ -150,6 +168,15 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
               </tr>
             </tbody>
           </table>
+
+          <!-- Pagination Controls -->
+          <app-pagination
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalItems]="filteredPositions().length"
+            (pageChange)="currentPage.set($event)"
+            (pageSizeChange)="pageSize.set($event); currentPage.set(1)"
+          ></app-pagination>
 
           <app-empty-state
             *ngIf="filteredPositions().length === 0"
@@ -241,7 +268,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           <div>
             <label class="app-label">Department</label>
             <select
-              [(ngModel)]="selectedDepartment"
+              [ngModel]="selectedDepartment()"
+              (ngModelChange)="selectedDepartment.set($event)"
               class="app-input"
             >
               <option value="ALL">All Departments</option>
@@ -252,7 +280,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           <div>
             <label class="app-label">Priority Level</label>
             <select
-              [(ngModel)]="selectedPriority"
+              [ngModel]="selectedPriority()"
+              (ngModelChange)="selectedPriority.set($event)"
               class="app-input"
             >
               <option value="ALL">All Priorities</option>
@@ -299,33 +328,71 @@ export class RecruitmentPositionsComponent {
   recruiters = RECRUITERS_LIST;
   hiringManagers = HIRING_MANAGERS;
 
-  searchTerm = '';
-  selectedDepartment = 'ALL';
-  selectedPriority = 'ALL';
+  searchTerm = signal('');
+  selectedDepartment = signal('ALL');
+  selectedPriority = signal('ALL');
+  sortField = signal<'title' | 'department' | 'priority' | 'requiredHc' | 'targetDate' | 'status'>('title');
+  sortDir = signal<'asc' | 'desc'>('asc');
+
+  currentPage = signal(1);
+  pageSize = signal(10);
 
   isDrawerOpen = false;
   selectedDrawerPosition?: Position;
 
   isFilterDrawerOpen = false;
 
-  filteredPositions = computed(() => {
-    return this.positionService.positions().filter(p => {
-      const matchesSearch = !this.searchTerm ||
-        p.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        p.id.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        p.owner.toLowerCase().includes(this.searchTerm.toLowerCase());
+  setSort(field: 'title' | 'department' | 'priority' | 'requiredHc' | 'targetDate' | 'status') {
+    if (this.sortField() === field) {
+      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortField.set(field);
+      this.sortDir.set('asc');
+    }
+  }
 
-      const matchesDept = this.selectedDepartment === 'ALL' || p.department === this.selectedDepartment;
-      const matchesPriority = this.selectedPriority === 'ALL' || p.priority === this.selectedPriority;
+  filteredPositions = computed(() => {
+    const q = this.searchTerm().toLowerCase().trim();
+    const dept = this.selectedDepartment();
+    const prio = this.selectedPriority();
+
+    const list = this.positionService.positions().filter(p => {
+      const matchesSearch = !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        p.owner.toLowerCase().includes(q) ||
+        p.department.toLowerCase().includes(q);
+
+      const matchesDept = dept === 'ALL' || p.department === dept;
+      const matchesPriority = prio === 'ALL' || p.priority === prio;
 
       return matchesSearch && matchesDept && matchesPriority;
     });
+
+    const f = this.sortField();
+    const dir = this.sortDir() === 'asc' ? 1 : -1;
+
+    return list.sort((a, b) => {
+      let valA: any = a[f as keyof Position] ?? '';
+      let valB: any = b[f as keyof Position] ?? '';
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (valA < valB) return -1 * dir;
+      if (valA > valB) return 1 * dir;
+      return 0;
+    });
+  });
+
+  paginatedPositions = computed(() => {
+    const list = this.filteredPositions();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
   });
 
   activeFilterCount = computed(() => {
     let count = 0;
-    if (this.selectedDepartment !== 'ALL') count++;
-    if (this.selectedPriority !== 'ALL') count++;
+    if (this.selectedDepartment() !== 'ALL') count++;
+    if (this.selectedPriority() !== 'ALL') count++;
     return count;
   });
 
@@ -335,9 +402,11 @@ export class RecruitmentPositionsComponent {
   }
 
   resetFilters() {
-    this.searchTerm = '';
-    this.selectedDepartment = 'ALL';
-    this.selectedPriority = 'ALL';
+    this.searchTerm.set('');
+    this.selectedDepartment.set('ALL');
+    this.selectedPriority.set('ALL');
+    this.sortField.set('title');
+    this.sortDir.set('asc');
     this.isFilterDrawerOpen = false;
   }
 }

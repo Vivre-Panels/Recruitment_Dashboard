@@ -14,7 +14,7 @@ export interface ViewTab {
   standalone: true,
   imports: [CommonModule, RouterModule, IconComponent],
   template: `
-    <div class="inline-flex items-center p-1 bg-slate-100/80 border border-slate-200/90 rounded-xl shadow-2xs">
+    <div class="inline-flex items-center p-1 bg-slate-100/80 border border-slate-200/90 rounded-xl shadow-2xs overflow-x-auto max-w-full">
       <a
         *ngFor="let tab of tabs"
         [routerLink]="tab.route"

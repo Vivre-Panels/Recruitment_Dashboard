@@ -12,6 +12,7 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-analytics-sla',
@@ -26,7 +27,8 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
     SearchInputComponent,
     IconComponent,
     EmptyStateComponent,
-    DrawerComponent
+    DrawerComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -41,8 +43,11 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
         </div>
       </app-page-header>
 
+      <!-- Skeleton KPI Cards Loader -->
+      <app-loading-state *ngIf="slaService.isLoading()" type="kpis"></app-loading-state>
+
       <!-- 3 Primary Summary Cards (Prompt Rule 17) -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div *ngIf="!slaService.isLoading()" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <app-kpi-card
           title="Breached"
           [value]="slaService.breachedCount()"

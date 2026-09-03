@@ -5,6 +5,7 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-analytics-funnel',
@@ -14,7 +15,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     RouterModule,
     PageHeaderComponent,
     KpiCardComponent,
-    IconComponent
+    IconComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -29,8 +31,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
         </div>
       </app-page-header>
 
+      <!-- Skeleton KPI Loader -->
+      <app-loading-state *ngIf="analyticsService.isLoading()" type="kpis"></app-loading-state>
+
       <!-- Key Metrics (Prompt Rule 15) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div *ngIf="!analyticsService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <app-kpi-card
           title="Conversion Yield"
           [value]="analyticsService.overallConversionRate() + '%'"
@@ -48,8 +53,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
         ></app-kpi-card>
       </div>
 
+      <!-- Skeleton Card Loader -->
+      <app-loading-state *ngIf="analyticsService.isLoading()" type="cards"></app-loading-state>
+
       <!-- Stage-by-Stage Funnel (Prompt Rule 15) -->
-      <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-4">
+      <div *ngIf="!analyticsService.isLoading()" class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="text-sm font-bold text-slate-900">Recruitment Funnel Throughput</h3>
           <span class="text-xs text-slate-400 font-mono">YTD Pipeline</span>

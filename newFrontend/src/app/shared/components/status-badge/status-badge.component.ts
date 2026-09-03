@@ -8,7 +8,7 @@ import { HealthStatus } from '../../../core/models/recruitment.model';
   imports: [CommonModule],
   template: `
     <span 
-      class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border shadow-2xs select-none"
+      class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border shadow-2xs select-none whitespace-nowrap shrink-0"
       [ngClass]="badgeClass"
     >
       <span class="w-2 h-2 rounded-full" [ngClass]="dotClass"></span>

@@ -97,6 +97,8 @@ body {
     transition: background-color 0.15s ease-in-out;
     cursor: pointer;
     border: none;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .app-btn-primary:hover {
     background-color: #497731;
@@ -116,6 +118,8 @@ body {
     transition: background-color 0.15s ease-in-out;
     cursor: pointer;
     border: 1px solid #e2e8f0;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .app-btn-secondary:hover {
     background-color: #e2e8f0;
@@ -136,9 +140,16 @@ body {
     transition: background-color 0.15s ease-in-out;
     cursor: pointer;
     border: none;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .app-btn-dark:hover {
     background-color: #1e293b;
+  }
+
+  /* Prevent button & badge text wrapping globally */
+  button, .btn, [class*="btn"], span.rounded-full, span.rounded-xl, span.rounded-lg, span.rounded-md, span.rounded {
+    white-space: nowrap;
   }
 
   /* Universal Table Structure */

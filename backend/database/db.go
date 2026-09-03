@@ -251,7 +251,30 @@ func RunMigrations() {
 		}
 	}
 
-	fmt.Println("Migrations completed successfully")
+	// Add High Performance Database Indexes for Fast API Queries
+	indexQueries := []string{
+		`IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_app_pipeline_created' AND object_id = OBJECT_ID('dbo.application_pipeline'))
+		 BEGIN
+			CREATE INDEX IX_app_pipeline_created ON [dbo].[application_pipeline]([Application_Created_Time] DESC);
+		 END`,
+		`IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_app_pipeline_job' AND object_id = OBJECT_ID('dbo.application_pipeline'))
+		 BEGIN
+			CREATE INDEX IX_app_pipeline_job ON [dbo].[application_pipeline]([Job_Opening_ID]);
+		 END`,
+		`IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_app_pipeline_status' AND object_id = OBJECT_ID('dbo.application_pipeline'))
+		 BEGIN
+			CREATE INDEX IX_app_pipeline_status ON [dbo].[application_pipeline]([Application_Status]);
+		 END`,
+		`IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_requisition_dept' AND object_id = OBJECT_ID('dbo.requisition'))
+		 BEGIN
+			CREATE INDEX IX_requisition_dept ON [dbo].[requisition]([Department]);
+		 END`,
+	}
+	for _, idxQ := range indexQueries {
+		_, _ = DB.Exec(idxQ)
+	}
+
+	fmt.Println("Migrations & Indexes completed successfully")
 }
 
 func Close() {

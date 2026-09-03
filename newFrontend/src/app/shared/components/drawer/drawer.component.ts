@@ -18,7 +18,7 @@ import { IconComponent } from '../icon/icon.component';
       ></div>
 
       <!-- Drawer panel -->
-      <div class="fixed inset-y-0 right-0 max-w-full flex pl-10 z-10">
+      <div class="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 z-10">
         <div 
           class="w-screen bg-white shadow-2xl flex flex-col transform transition ease-in-out duration-300"
           [ngClass]="widthClass"

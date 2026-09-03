@@ -5,6 +5,7 @@ import { AnalyticsService } from '../../../core/services/analytics.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-analytics-hire-quality',
@@ -14,7 +15,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     RouterModule,
     PageHeaderComponent,
     KpiCardComponent,
-    IconComponent
+    IconComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6">
@@ -29,8 +31,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
         </div>
       </app-page-header>
 
+      <!-- Skeleton Loader -->
+      <app-loading-state *ngIf="analyticsService.isLoading()" type="kpis"></app-loading-state>
+
       <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div *ngIf="!analyticsService.isLoading()" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <app-kpi-card
           title="Total Joined"
           [value]="analyticsService.totalJoined()"

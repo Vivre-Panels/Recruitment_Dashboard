@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"recruitment-dashboard/backend/cache"
 	"recruitment-dashboard/backend/database"
 	"recruitment-dashboard/backend/models"
 )
@@ -128,12 +130,34 @@ func CreateApplication(c *gin.Context) {
 }
 
 func GetApplications(c *gin.Context) {
+	cacheKey := "applications:" + c.Request.URL.RawQuery
+	if val, ok := cache.Get(cacheKey, 30*time.Second); ok {
+		c.JSON(http.StatusOK, val)
+		return
+	}
+
 	dept := c.Query("department")
 	pos := c.Query("position")
 	owner := c.Query("owner")
 	prio := c.Query("priority")
 	from := c.Query("from")
 	to := c.Query("to")
+
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "100")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 100
+	}
+	if limit > 250 {
+		limit = 250
+	}
+	offset := (page - 1) * limit
 
 	whereClauses := []string{"1=1"}
 	args := []interface{}{}
@@ -172,6 +196,16 @@ func GetApplications(c *gin.Context) {
 
 	whereStmt := strings.Join(whereClauses, " AND ")
 
+	// Fast Count Total Query (0ms metadata lookup when no filter)
+	var total int
+	if whereStmt == "1=1" {
+		_ = database.DB.Get(&total, `SELECT ISNULL(SUM(p.rows), 0) FROM sys.partitions p WHERE p.object_id = OBJECT_ID('dbo.application_pipeline') AND p.index_id < 2`)
+	} else {
+		countQuery := fmt.Sprintf(`SELECT COUNT(1) FROM [dbo].[application_pipeline] WHERE %s`, whereStmt)
+		_ = database.DB.Get(&total, countQuery, args...)
+	}
+
+	// Paginated Data Query
 	query := fmt.Sprintf(`SELECT [Id], [Application_ID], [Application_Created_Time], [Application_Status],
 		[Call_Audit_Score], [Call_Priority], [Candidate_Name], [CV_Link],
 		[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [Recruiter_Name],
@@ -182,10 +216,13 @@ func GetApplications(c *gin.Context) {
 		[Behaviour_Eval_Details], [Retention_7d_Status], [Retention_30d_Status],
 		[Is_30d_Failure], [Replacement_Required], [In_Talent_Bank], [Candidate_Attributes],
 		[CreatedAt], [UpdatedAt]
-		FROM [dbo].[application_pipeline] WHERE %s ORDER BY [Application_Created_Time] DESC`, whereStmt)
+		FROM [dbo].[application_pipeline] WHERE %s ORDER BY [Application_Created_Time] DESC
+		OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY`, whereStmt, argIdx, argIdx+1)
+
+	args = append(args, offset, limit)
 
 	var applications []models.Application
-	err := database.DB.Select(&applications, query, args...)
+	err = database.DB.Select(&applications, query, args...)
 	if err != nil {
 		log.Printf("Failed to fetch applications: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -205,13 +242,25 @@ func GetApplications(c *gin.Context) {
 		applications[i].JobOpeningID = toString(applications[i].JobOpeningID)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    applications,
-	})
+	respPayload := gin.H{
+		"success":     true,
+		"data":        applications,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": (total + limit - 1) / limit,
+	}
+	cache.Set(cacheKey, respPayload)
+	c.JSON(http.StatusOK, respPayload)
 }
 
 func GetSummary(c *gin.Context) {
+	cacheKey := "summary:" + c.Request.URL.RawQuery
+	if val, ok := cache.Get(cacheKey, 30*time.Second); ok {
+		c.JSON(http.StatusOK, val)
+		return
+	}
+
 	type Summary struct {
 		TotalRequisitions    int `json:"total_requisitions"`
 		OpenRequisitions     int `json:"open_requisitions"`
@@ -223,46 +272,35 @@ func GetSummary(c *gin.Context) {
 
 	var summary Summary
 
-	err := database.DB.Get(&summary.TotalRequisitions,
-		`SELECT COUNT(*) FROM [dbo].[requisition]`)
-	if err != nil {
-		log.Printf("Failed to count requisitions: %v", err)
-	}
+	// Single Combined Query for Requisitions
+	_ = database.DB.QueryRow(`
+		SELECT 
+			COUNT(*),
+			COUNT(CASE WHEN [Status] = 'Open' OR [Status] IS NULL THEN 1 END)
+		FROM [dbo].[requisition]`).Scan(&summary.TotalRequisitions, &summary.OpenRequisitions)
 
-	err = database.DB.Get(&summary.OpenRequisitions,
-		`SELECT COUNT(*) FROM [dbo].[requisition] WHERE [Status] = 'Open' OR [Status] IS NULL`)
-	if err != nil {
-		log.Printf("Failed to count open requisitions: %v", err)
-	}
+	// Single Combined Query for Applications Pipeline
+	_ = database.DB.QueryRow(`
+		SELECT 
+			COUNT(*),
+			COUNT(DISTINCT [Candidate_Name]),
+			ISNULL(AVG(CAST([CV_Score] AS FLOAT)), 0),
+			ISNULL(AVG(CAST([Call_Audit_Score] AS FLOAT)), 0)
+		FROM [dbo].[application_pipeline]`).Scan(&summary.TotalApplications, &summary.TotalCandidates, &summary.AvgCVScore, &summary.AvgCallAuditScore)
 
-	err = database.DB.Get(&summary.TotalApplications,
-		`SELECT COUNT(*) FROM [dbo].[application_pipeline]`)
-	if err != nil {
-		log.Printf("Failed to count applications: %v", err)
-	}
+	summary.AvgCVScore = MathRound(summary.AvgCVScore)
+	summary.AvgCallAuditScore = MathRound(summary.AvgCallAuditScore)
 
-	err = database.DB.Get(&summary.TotalCandidates,
-		`SELECT COUNT(DISTINCT [Candidate_Name]) FROM [dbo].[application_pipeline]`)
-	if err != nil {
-		log.Printf("Failed to count candidates: %v", err)
-	}
-
-	err = database.DB.Get(&summary.AvgCVScore,
-		`SELECT ISNULL(AVG(CAST([CV_Score] AS FLOAT)), 0) FROM [dbo].[application_pipeline]`)
-	if err != nil {
-		log.Printf("Failed to avg CV score: %v", err)
-	}
-
-	err = database.DB.Get(&summary.AvgCallAuditScore,
-		`SELECT ISNULL(AVG(CAST([Call_Audit_Score] AS FLOAT)), 0) FROM [dbo].[application_pipeline]`)
-	if err != nil {
-		log.Printf("Failed to avg call audit score: %v", err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
+	respPayload := gin.H{
 		"success": true,
 		"data":    summary,
-	})
+	}
+	cache.Set(cacheKey, respPayload)
+	c.JSON(http.StatusOK, respPayload)
+}
+
+func MathRound(val float64) float64 {
+	return float64(int(val*10.0+0.5)) / 10.0
 }
 
 func extractHref(s *string) *string {

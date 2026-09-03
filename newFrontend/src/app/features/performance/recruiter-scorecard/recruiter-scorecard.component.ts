@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { RecruiterService } from '../../../core/services/recruiter.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-performance-recruiter-scorecard',
@@ -12,7 +13,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     CommonModule,
     RouterModule,
     PageHeaderComponent,
-    IconComponent
+    IconComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6">
@@ -27,27 +29,30 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
         </div>
       </app-page-header>
 
+      <!-- Skeleton Cards Loader -->
+      <app-loading-state *ngIf="recruiterService.isLoading()" type="cards"></app-loading-state>
+
       <!-- Recruiter Profile Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div *ngIf="!recruiterService.isLoading()" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div 
           *ngFor="let rec of recruiterService.recruiters()"
           class="bg-white border border-slate-200/90 rounded-xl p-5 shadow-xs hover:shadow-md transition-all space-y-4"
         >
           <!-- Card Header -->
-          <div class="flex items-start justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-3">
-              <div class="w-11 h-11 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                {{ rec.avatar }}
+          <div class="flex items-start justify-between border-b border-slate-100 pb-3 gap-3">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-11 h-11 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                {{ getInitials(rec.name) }}
               </div>
-              <div>
-                <h3 class="text-base font-bold text-slate-900 leading-tight">{{ rec.name }}</h3>
-                <span class="text-xs text-slate-500 font-medium">{{ rec.department }} • {{ rec.email }}</span>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-bold text-slate-900 leading-tight truncate">{{ rec.name }}</h3>
+                <span class="text-xs text-slate-500 font-medium truncate block">{{ rec.department }} • {{ rec.email }}</span>
               </div>
             </div>
 
-            <div class="text-right">
-              <span class="text-lg font-bold font-mono text-brand-700">{{ rec.overallScore }}%</span>
-              <span class="text-[10px] uppercase font-bold text-slate-400 block">Weighted Score</span>
+            <div class="text-right shrink-0">
+              <span class="text-lg font-bold font-mono text-brand-700 block leading-none">{{ rec.overallScore }}%</span>
+              <span class="text-[10px] uppercase font-bold text-slate-400 block mt-1 whitespace-nowrap">Weighted Score</span>
             </div>
           </div>
 
@@ -108,4 +113,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 })
 export class PerformanceRecruiterScorecardComponent {
   recruiterService = inject(RecruiterService);
+
+  getInitials(name: string): string {
+    if (!name) return 'RS';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
 }

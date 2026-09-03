@@ -9,8 +9,8 @@ module.exports = {
     {
       name: "Recruiter-Frontend-5081",
       script: "npm",
-      args: "run dev",
-      cwd: "frontend"
+      args: "run start",
+      cwd: "newFrontend"
     },
   ]
 };

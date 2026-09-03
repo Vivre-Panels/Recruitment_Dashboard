@@ -163,7 +163,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
         </div>
 
         <!-- Read-Only Mode Badge (Action Buttons Disabled) -->
-        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+        <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           Read-Only Admin Monitor
         </span>

@@ -8,7 +8,7 @@ import { PriorityLevel } from '../../../core/models/recruitment.model';
   imports: [CommonModule],
   template: `
     <span 
-      class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold font-mono tracking-wider select-none uppercase"
+      class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold font-mono tracking-wider select-none uppercase whitespace-nowrap shrink-0"
       [ngClass]="priorityClass"
     >
       {{ priority }}

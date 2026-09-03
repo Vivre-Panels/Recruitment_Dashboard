@@ -1,13 +1,25 @@
 import { Injectable, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { SystemSettings } from '../models/recruitment.model';
-import settingsMock from '../../../assets/mock/settings.json';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SettingsService {
-  private settingsState = signal<SystemSettings>(settingsMock as SystemSettings);
+  private settingsState = signal<SystemSettings>({
+    companyName: 'Vivre Panels ERP',
+    timezone: 'Asia/Kolkata',
+    defaultCurrency: 'INR',
+    retentionBenchmarkDays: 30,
+    p0TargetDays: 14,
+    p1TargetDays: 30,
+    p2TargetDays: 45,
+    slaRules: [
+      { stage: 'Screening', targetHours: 24, warningHours: 18, escalateTo: 'Lead Recruiter' },
+      { stage: 'Interview', targetHours: 48, warningHours: 36, escalateTo: 'Hiring Manager' }
+    ],
+    pipelineStages: []
+  });
 
   readonly settings = this.settingsState.asReadonly();
 

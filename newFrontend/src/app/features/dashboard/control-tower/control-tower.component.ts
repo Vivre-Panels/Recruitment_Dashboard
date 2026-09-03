@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,7 @@ import { SearchInputComponent } from '../../../shared/components/search-input/se
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-dashboard-control-tower',
@@ -27,22 +28,18 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
     SearchInputComponent,
     IconComponent,
     EmptyStateComponent,
-    DrawerComponent
+    DrawerComponent,
+    LoadingStateComponent
   ],
   template: `
-    <div class="space-y-6 max-w-7xl mx-auto">
-      <!-- Page Header -->
+    <div class="space-y-6">
       <app-page-header
         title="Recruitment Control Tower"
-        subtitle="Operational command grid tracking open positions, bottleneck escalations, and SLA health (Read-Only Data View)."
+        subtitle="Position-wise headcount, priority, calculated funnel stages, SLA risks, and bottleneck action tracking."
       >
         <div badges class="flex items-center gap-2">
-          <span class="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 bg-red-50 px-3 py-1 rounded-full border border-red-200 shadow-2xs">
-            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-            {{ criticalP0Count() }} Critical Escalations
-          </span>
-          <span class="text-xs font-semibold px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full border border-slate-200">
-            Read-Only Grid
+          <span class="text-xs font-mono font-semibold px-2.5 py-1 bg-red-50 text-red-700 rounded-full border border-red-200">
+            {{ criticalP0Count() }} P0 Critical Roles
           </span>
         </div>
 
@@ -50,20 +47,20 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
           <button 
             type="button" 
             (click)="exportReport()"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-colors cursor-pointer"
+            class="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-colors cursor-pointer inline-flex items-center gap-1.5"
           >
-            <app-icon name="clipboard" [size]="14" class="text-brand-600"></app-icon>
-            Export Tower Data
+            <app-icon name="download" [size]="14"></app-icon>
+            Export Tower Report
           </button>
         </div>
       </app-page-header>
 
-      <!-- Search & Filter Bar -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Filter Controls Bar -->
+      <div class="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex-1 max-w-md">
           <app-search-input
-            [value]="searchTerm"
-            (valueChange)="searchTerm = $event"
+            [value]="searchTerm()"
+            (valueChange)="searchTerm.set($event)"
             placeholder="Search position title, ID, recruiter..."
           ></app-search-input>
         </div>
@@ -75,17 +72,17 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
             class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
           >
             <app-icon name="filter" [size]="14" class="text-brand-600"></app-icon>
-            Filters
+            Filter Positions
             <span *ngIf="activeFilterCount() > 0" class="w-4.5 h-4.5 rounded-full bg-brand-500 text-white text-[10px] flex items-center justify-center font-bold">
               {{ activeFilterCount() }}
             </span>
           </button>
 
           <button
-            *ngIf="activeFilterCount() > 0 || searchTerm"
+            *ngIf="activeFilterCount() > 0 || searchTerm()"
             type="button"
             (click)="resetFilters()"
-            class="text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-1 cursor-pointer"
+            class="text-xs text-slate-500 hover:text-slate-800 font-bold px-2 py-1 cursor-pointer"
           >
             Reset
           </button>
@@ -94,7 +91,9 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
 
       <!-- Decision Grid Read-Only Table -->
       <div class="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
-        <div class="overflow-x-auto">
+        <app-loading-state *ngIf="positionService.isLoading()" type="table" [rows]="6"></app-loading-state>
+
+        <div *ngIf="!positionService.isLoading()" class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
@@ -279,7 +278,8 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
           <div>
             <label class="block font-bold text-slate-700 mb-1.5">Department</label>
             <select
-              [(ngModel)]="selectedDepartment"
+              [ngModel]="selectedDepartment()"
+              (ngModelChange)="selectedDepartment.set($event)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Departments</option>
@@ -290,7 +290,8 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
           <div>
             <label class="block font-bold text-slate-700 mb-1.5">Priority</label>
             <select
-              [(ngModel)]="selectedPriority"
+              [ngModel]="selectedPriority()"
+              (ngModelChange)="selectedPriority.set($event)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Priorities</option>
@@ -303,7 +304,8 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
           <div>
             <label class="block font-bold text-slate-700 mb-1.5">Health Status</label>
             <select
-              [(ngModel)]="selectedStatus"
+              [ngModel]="selectedStatus()"
+              (ngModelChange)="selectedStatus.set($event)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Statuses</option>
@@ -316,7 +318,8 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
           <div>
             <label class="block font-bold text-slate-700 mb-1.5">Lead Recruiter</label>
             <select
-              [(ngModel)]="selectedOwner"
+              [ngModel]="selectedOwner()"
+              (ngModelChange)="selectedOwner.set($event)"
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Owners</option>
@@ -353,11 +356,11 @@ export class DashboardControlTowerComponent {
   departments = DEPARTMENTS;
   recruiters = RECRUITERS_LIST;
 
-  searchTerm = '';
-  selectedDepartment = 'ALL';
-  selectedPriority = 'ALL';
-  selectedStatus = 'ALL';
-  selectedOwner = 'ALL';
+  searchTerm = signal('');
+  selectedDepartment = signal('ALL');
+  selectedPriority = signal('ALL');
+  selectedStatus = signal('ALL');
+  selectedOwner = signal('ALL');
 
   isDrawerOpen = false;
   selectedDrawerPosition?: Position;
@@ -369,16 +372,23 @@ export class DashboardControlTowerComponent {
   );
 
   filteredPositions = computed(() => {
-    return this.positionService.positions().filter(p => {
-      const matchesSearch = !this.searchTerm ||
-        p.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        p.id.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        p.owner.toLowerCase().includes(this.searchTerm.toLowerCase());
+    const q = this.searchTerm().toLowerCase().trim();
+    const dept = this.selectedDepartment();
+    const prio = this.selectedPriority();
+    const st = this.selectedStatus();
+    const own = this.selectedOwner();
 
-      const matchesDept = this.selectedDepartment === 'ALL' || p.department === this.selectedDepartment;
-      const matchesPriority = this.selectedPriority === 'ALL' || p.priority === this.selectedPriority;
-      const matchesStatus = this.selectedStatus === 'ALL' || p.status === this.selectedStatus;
-      const matchesOwner = this.selectedOwner === 'ALL' || p.owner === this.selectedOwner;
+    return this.positionService.positions().filter(p => {
+      const matchesSearch = !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        p.owner.toLowerCase().includes(q) ||
+        p.department.toLowerCase().includes(q);
+
+      const matchesDept = dept === 'ALL' || p.department === dept;
+      const matchesPriority = prio === 'ALL' || p.priority === prio;
+      const matchesStatus = st === 'ALL' || p.status === st;
+      const matchesOwner = own === 'ALL' || p.owner === own;
 
       return matchesSearch && matchesDept && matchesPriority && matchesStatus && matchesOwner;
     });
@@ -386,10 +396,10 @@ export class DashboardControlTowerComponent {
 
   activeFilterCount = computed(() => {
     let count = 0;
-    if (this.selectedDepartment !== 'ALL') count++;
-    if (this.selectedPriority !== 'ALL') count++;
-    if (this.selectedStatus !== 'ALL') count++;
-    if (this.selectedOwner !== 'ALL') count++;
+    if (this.selectedDepartment() !== 'ALL') count++;
+    if (this.selectedPriority() !== 'ALL') count++;
+    if (this.selectedStatus() !== 'ALL') count++;
+    if (this.selectedOwner() !== 'ALL') count++;
     return count;
   });
 
@@ -403,11 +413,11 @@ export class DashboardControlTowerComponent {
   }
 
   resetFilters() {
-    this.searchTerm = '';
-    this.selectedDepartment = 'ALL';
-    this.selectedPriority = 'ALL';
-    this.selectedStatus = 'ALL';
-    this.selectedOwner = 'ALL';
+    this.searchTerm.set('');
+    this.selectedDepartment.set('ALL');
+    this.selectedPriority.set('ALL');
+    this.selectedStatus.set('ALL');
+    this.selectedOwner.set('ALL');
     this.isFilterDrawerOpen = false;
   }
 }

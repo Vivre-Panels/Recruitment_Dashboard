@@ -1,22 +1,27 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { Position, HealthStatus, PriorityLevel, BottleneckInfo } from '../models/recruitment.model';
-import positionsMock from '../../../assets/mock/positions.json';
+import { map, tap, catchError } from 'rxjs/operators';
+import { Position, HealthStatus, PriorityLevel } from '../models/recruitment.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PositionService {
-  private positionsState = signal<Position[]>(positionsMock as Position[]);
+  private http = inject(HttpClient);
+  private apiUrl = environment.apiUrl;
 
+  private positionsState = signal<Position[]>([]);
   readonly positions = this.positionsState.asReadonly();
+  readonly isLoading = signal<boolean>(true);
 
   readonly totalRequiredHc = computed(() => 
-    this.positionsState().reduce((acc, p) => acc + p.requiredHc, 0)
+    this.positionsState().reduce((acc, p) => acc + (p.requiredHc || 1), 0)
   );
 
   readonly totalJoinedHc = computed(() => 
-    this.positionsState().reduce((acc, p) => acc + p.joinedHc, 0)
+    this.positionsState().reduce((acc, p) => acc + (p.joinedHc || 0), 0)
   );
 
   readonly balanceHc = computed(() => 
@@ -39,8 +44,82 @@ export class PositionService {
     this.positionsState().filter(p => p.status === 'On Track').length
   );
 
+  constructor() {
+    this.loadPositions().subscribe();
+  }
+
+  loadPositions(): Observable<Position[]> {
+    if (this.positionsState().length === 0) {
+      this.isLoading.set(true);
+    }
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/control-tower`).pipe(
+      map(res => {
+        if (!res.success || !res.data) return this.positionsState();
+        return res.data.map(item => this.mapApiItemToPosition(item));
+      }),
+      tap(mapped => {
+        this.positionsState.set(mapped);
+        this.isLoading.set(false);
+      }),
+      catchError(err => {
+        console.warn('Backend connection failed, using existing state fallback:', err);
+        this.isLoading.set(false);
+        return of(this.positionsState());
+      })
+    );
+  }
+
+  private mapApiItemToPosition(item: any): Position {
+    const funnel = item.funnel || {};
+    const b = item.bottleneck || {};
+    
+    let status: HealthStatus = 'On Track';
+    if (item.rag_status === 'Red') status = 'Critical';
+    else if (item.rag_status === 'Amber') status = 'At Risk';
+
+    return {
+      id: item.job_opening_id || item.requisition_id || `POS-${item.id}`,
+      title: item.job_title || 'Untitled Position',
+      department: item.department || 'Engineering',
+      requiredHc: item.required_hc || 1,
+      joinedHc: funnel.joined || 0,
+      priority: (item.priority as PriorityLevel) || 'P1',
+      owner: item.owner || 'Recruiter',
+      recruiterId: `REC-${item.id}`,
+      hiringManager: item.hiring_manager || 'Hiring Manager',
+      targetDate: item.target_date || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0],
+      salaryRange: item.salary_range || 'Not Disclosed',
+      location: item.location || 'Pan India',
+      experienceRange: item.experience_required || 'Not Specified',
+      status,
+      mustHaveSkills: item.must_haves ? item.must_haves.split(',') : (item.job_title ? [item.job_title] : []),
+      knockoutCriteria: item.knockout_criteria ? item.knockout_criteria.split(',') : [],
+      description: item.remarks || item.job_description || '',
+      funnelCounts: {
+        sourced: funnel.sourced || 0,
+        screened: funnel.screened || 0,
+        interviewed: funnel.interview_completed || funnel.interview_scheduled || 0,
+        selected: funnel.comp_approval || 0,
+        offered: funnel.offered || 0,
+        accepted: funnel.offered || 0,
+        joined: funnel.joined || 0
+      },
+      bottleneck: b.type ? {
+        stage: b.type,
+        issue: b.remarks || b.type,
+        pendingWith: b.action_owner || 'Owner',
+        pendingSinceDays: b.elapsed_hours ? Math.round(b.elapsed_hours / 24) : 1,
+        slaStatus: item.rag_status === 'Red' ? 'Breached' : (item.rag_status === 'Amber' ? 'At Risk' : 'Within SLA'),
+        remark: b.remarks,
+        actionTaken: b.action_owner
+      } : undefined,
+      activeCandidatesCount: (funnel.sourced || 0) - (funnel.joined || 0)
+    };
+  }
+
   getPositions(): Observable<Position[]> {
-    return of(this.positionsState());
+    return this.loadPositions();
   }
 
   getPositionById(id: string): Position | undefined {
@@ -48,40 +127,27 @@ export class PositionService {
   }
 
   createPosition(newPosition: Partial<Position>): Position {
-    const id = `POS-${100 + this.positionsState().length + 1}`;
-    const position: Position = {
-      id,
-      title: newPosition.title || 'Untitled Position',
-      department: newPosition.department || 'Engineering',
-      requiredHc: newPosition.requiredHc || 1,
-      joinedHc: 0,
-      priority: newPosition.priority || 'P1',
-      owner: newPosition.owner || 'Rahul Sharma',
-      recruiterId: newPosition.recruiterId || 'REC-1',
-      hiringManager: newPosition.hiringManager || 'Vikram Malhotra (VP Eng)',
-      targetDate: newPosition.targetDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
-      createdAt: new Date().toISOString().split('T')[0],
-      salaryRange: newPosition.salaryRange || '$120k - $150k',
-      location: newPosition.location || 'San Francisco, CA (Hybrid)',
-      experienceRange: newPosition.experienceRange || '5 - 8 Years',
-      status: 'On Track',
-      mustHaveSkills: newPosition.mustHaveSkills || ['Problem Solving', 'Communication'],
-      knockoutCriteria: newPosition.knockoutCriteria || ['Experience requirement not met'],
-      description: newPosition.description || 'Enterprise role responsible for operational scale.',
-      funnelCounts: {
-        sourced: 0,
-        screened: 0,
-        interviewed: 0,
-        selected: 0,
-        offered: 0,
-        accepted: 0,
-        joined: 0
-      },
-      activeCandidatesCount: 0
+    const payload = {
+      Requisition_ID: `REQ-${Date.now()}`,
+      Job_Opening_ID: newPosition.id || `JOB-${Date.now()}`,
+      Job_Title: newPosition.title,
+      Department: newPosition.department,
+      No_Of_Openings: newPosition.requiredHc || 1,
+      Recruiter_Name: newPosition.owner,
+      Hiring_Manager: newPosition.hiringManager,
+      Priority: newPosition.priority || 'P1',
+      Target_Date: newPosition.targetDate,
+      Status: 'Open'
     };
 
-    this.positionsState.update(list => [position, ...list]);
-    return position;
+    this.http.post(`${this.apiUrl}/requisition`, payload).subscribe({
+      next: () => this.loadPositions().subscribe(),
+      error: (err) => console.error('Failed to create requisition API:', err)
+    });
+
+    const created = this.mapApiItemToPosition(payload);
+    this.positionsState.update(list => [created, ...list]);
+    return created;
   }
 
   updatePosition(id: string, updates: Partial<Position>): boolean {

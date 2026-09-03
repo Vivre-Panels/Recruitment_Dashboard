@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-recruitment-candidates',
@@ -25,7 +27,9 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
     IconComponent,
     EmptyStateComponent,
     DrawerComponent,
-    ViewSwitcherTabsComponent
+    ViewSwitcherTabsComponent,
+    LoadingStateComponent,
+    PaginationComponent
   ],
   template: `
     <div class="app-page-container">
@@ -43,8 +47,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
       <div class="app-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex-1 max-w-md">
           <app-search-input
-            [value]="searchTerm"
-            (valueChange)="searchTerm = $event"
+            [value]="searchTerm()"
+            (valueChange)="searchTerm.set($event)"
             placeholder="Search candidate name, skills, role title..."
           ></app-search-input>
         </div>
@@ -63,7 +67,7 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           </button>
 
           <button
-            *ngIf="activeFilterCount() > 0 || searchTerm"
+            *ngIf="activeFilterCount() > 0 || searchTerm()"
             type="button"
             (click)="resetFilters()"
             class="text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-1 cursor-pointer"
@@ -75,21 +79,33 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
 
       <!-- Candidates Read-Only Table -->
       <div class="app-card p-0 overflow-hidden">
-        <div class="overflow-x-auto">
+        <app-loading-state *ngIf="candidateService.isLoading()" type="table" [rows]="6"></app-loading-state>
+
+        <div *ngIf="!candidateService.isLoading()" class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr>
-                <th class="app-table-th">Candidate</th>
-                <th class="app-table-th">Applied Role</th>
-                <th class="app-table-th">Stage</th>
-                <th class="app-table-th text-center">Exp</th>
-                <th class="app-table-th text-center">Quality</th>
+                <th (click)="setSort('name')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Candidate <span *ngIf="sortField() === 'name'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('positionTitle')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Applied Role <span *ngIf="sortField() === 'positionTitle'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('currentStage')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Stage <span *ngIf="sortField() === 'currentStage'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('experienceYears')" class="app-table-th text-center cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Exp <span *ngIf="sortField() === 'experienceYears'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
+                <th (click)="setSort('qualityScore')" class="app-table-th text-center cursor-pointer hover:bg-slate-100 transition-colors select-none">
+                  Quality <span *ngIf="sortField() === 'qualityScore'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
+                </th>
                 <th class="app-table-th text-right">View Action</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr 
-                *ngFor="let c of filteredCandidates()"
+                *ngFor="let c of paginatedCandidates()"
                 (click)="openCvDrawer(c)"
                 class="hover:bg-slate-50/80 transition-colors cursor-pointer group"
               >
@@ -140,6 +156,15 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
               </tr>
             </tbody>
           </table>
+
+          <!-- Pagination Controls -->
+          <app-pagination
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalItems]="filteredCandidates().length"
+            (pageChange)="currentPage.set($event)"
+            (pageSizeChange)="pageSize.set($event); currentPage.set(1)"
+          ></app-pagination>
 
           <app-empty-state
             *ngIf="filteredCandidates().length === 0"
@@ -231,7 +256,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           <div>
             <label class="app-label">Pipeline Stage</label>
             <select
-              [(ngModel)]="selectedStage"
+              [ngModel]="selectedStage()"
+              (ngModelChange)="selectedStage.set($event)"
               class="app-input"
             >
               <option value="ALL">All Stages</option>
@@ -242,7 +268,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           <div>
             <label class="app-label">Department</label>
             <select
-              [(ngModel)]="selectedDepartment"
+              [ngModel]="selectedDepartment()"
+              (ngModelChange)="selectedDepartment.set($event)"
               class="app-input"
             >
               <option value="ALL">All Departments</option>
@@ -253,7 +280,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
           <div>
             <label class="app-label">Open Position</label>
             <select
-              [(ngModel)]="selectedPositionId"
+              [ngModel]="selectedPositionId()"
+              (ngModelChange)="selectedPositionId.set($event)"
               class="app-input"
             >
               <option value="ALL">All Positions</option>
@@ -300,10 +328,15 @@ export class RecruitmentCandidatesComponent implements OnInit {
   pipelineStages = PIPELINE_STAGES;
   departments = DEPARTMENTS;
 
-  searchTerm = '';
-  selectedStage = 'ALL';
-  selectedDepartment = 'ALL';
-  selectedPositionId = 'ALL';
+  searchTerm = signal('');
+  selectedStage = signal('ALL');
+  selectedDepartment = signal('ALL');
+  selectedPositionId = signal('ALL');
+  sortField = signal<'name' | 'positionTitle' | 'currentStage' | 'experienceYears' | 'qualityScore'>('name');
+  sortDir = signal<'asc' | 'desc'>('asc');
+
+  currentPage = signal(1);
+  pageSize = signal(10);
 
   isFilterDrawerOpen = false;
   isCvDrawerOpen = false;
@@ -312,31 +345,66 @@ export class RecruitmentCandidatesComponent implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['positionId']) {
-        this.selectedPositionId = params['positionId'];
+        this.selectedPositionId.set(params['positionId']);
       }
     });
   }
 
-  filteredCandidates = computed(() => {
-    return this.candidateService.candidates().filter(c => {
-      const matchesSearch = !this.searchTerm ||
-        c.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        c.id.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        c.positionTitle.toLowerCase().includes(this.searchTerm.toLowerCase());
+  setSort(field: 'name' | 'positionTitle' | 'currentStage' | 'experienceYears' | 'qualityScore') {
+    if (this.sortField() === field) {
+      this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortField.set(field);
+      this.sortDir.set('asc');
+    }
+  }
 
-      const matchesStage = this.selectedStage === 'ALL' || c.currentStage === this.selectedStage;
-      const matchesDept = this.selectedDepartment === 'ALL' || c.department === this.selectedDepartment;
-      const matchesPosition = this.selectedPositionId === 'ALL' || c.positionId === this.selectedPositionId;
+  filteredCandidates = computed(() => {
+    const q = this.searchTerm().toLowerCase().trim();
+    const stg = this.selectedStage();
+    const dept = this.selectedDepartment();
+    const posId = this.selectedPositionId();
+
+    const list = this.candidateService.candidates().filter(c => {
+      const matchesSearch = !q ||
+        c.name.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q) ||
+        c.positionTitle.toLowerCase().includes(q) ||
+        c.recruiter.toLowerCase().includes(q) ||
+        c.skills.some(s => s.toLowerCase().includes(q));
+
+      const matchesStage = stg === 'ALL' || c.currentStage === stg;
+      const matchesDept = dept === 'ALL' || c.department === dept;
+      const matchesPosition = posId === 'ALL' || c.positionId === posId;
 
       return matchesSearch && matchesStage && matchesDept && matchesPosition;
     });
+
+    const f = this.sortField();
+    const dir = this.sortDir() === 'asc' ? 1 : -1;
+
+    return list.sort((a, b) => {
+      let valA: any = a[f as keyof Candidate] ?? '';
+      let valB: any = b[f as keyof Candidate] ?? '';
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (valA < valB) return -1 * dir;
+      if (valA > valB) return 1 * dir;
+      return 0;
+    });
+  });
+
+  paginatedCandidates = computed(() => {
+    const list = this.filteredCandidates();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return list.slice(start, start + this.pageSize());
   });
 
   activeFilterCount = computed(() => {
     let count = 0;
-    if (this.selectedStage !== 'ALL') count++;
-    if (this.selectedDepartment !== 'ALL') count++;
-    if (this.selectedPositionId !== 'ALL') count++;
+    if (this.selectedStage() !== 'ALL') count++;
+    if (this.selectedDepartment() !== 'ALL') count++;
+    if (this.selectedPositionId() !== 'ALL') count++;
     return count;
   });
 
@@ -346,10 +414,12 @@ export class RecruitmentCandidatesComponent implements OnInit {
   }
 
   resetFilters() {
-    this.searchTerm = '';
-    this.selectedStage = 'ALL';
-    this.selectedDepartment = 'ALL';
-    this.selectedPositionId = 'ALL';
+    this.searchTerm.set('');
+    this.selectedStage.set('ALL');
+    this.selectedDepartment.set('ALL');
+    this.selectedPositionId.set('ALL');
+    this.sortField.set('name');
+    this.sortDir.set('asc');
     this.isFilterDrawerOpen = false;
   }
 }

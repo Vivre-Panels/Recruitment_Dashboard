@@ -10,6 +10,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-recruitment-pipeline',
@@ -21,7 +22,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
     PageHeaderComponent,
     IconComponent,
     DrawerComponent,
-    ViewSwitcherTabsComponent
+    ViewSwitcherTabsComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -53,8 +55,11 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
         </div>
       </app-page-header>
 
+      <!-- Skeleton Kanban Loader -->
+      <app-loading-state *ngIf="candidateService.isLoading()" type="kanban"></app-loading-state>
+
       <!-- Read-Only Horizontal Scrolling Kanban Board -->
-      <div class="flex gap-4 overflow-x-auto pb-6 pt-1 select-none custom-kanban-scroll min-h-[620px]">
+      <div *ngIf="!candidateService.isLoading()" class="flex gap-4 overflow-x-auto pb-6 pt-1 select-none custom-kanban-scroll min-h-[620px]">
         <div 
           *ngFor="let stage of pipelineStages; let stageIdx = index"
           class="w-72 shrink-0 bg-slate-100/80 border border-slate-200/90 rounded-2xl flex flex-col max-h-[750px] shadow-2xs"

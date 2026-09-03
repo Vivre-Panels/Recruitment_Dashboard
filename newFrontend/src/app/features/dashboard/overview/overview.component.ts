@@ -16,6 +16,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-dashboard-overview',
@@ -32,7 +33,8 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
     IconComponent,
     EmptyStateComponent,
     DrawerComponent,
-    ViewSwitcherTabsComponent
+    ViewSwitcherTabsComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -58,8 +60,11 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
         </div>
       </app-page-header>
 
+      <!-- Skeleton KPI Grid -->
+      <app-loading-state *ngIf="positionService.isLoading()" type="kpis"></app-loading-state>
+
       <!-- 4 Core Executive KPI Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <app-kpi-card
           title="Required HC"
           [value]="positionService.totalRequiredHc()"
@@ -81,7 +86,7 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
 
         <app-kpi-card
           title="Successful Hires"
-          [value]="15"
+          [value]="positionService.totalJoinedHc()"
           unit="Hires"
           subtitle="Passed 30-day retention index"
           icon="award"
@@ -102,6 +107,9 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
 
       <!-- Attention Required List -->
       <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs">
+        <app-loading-state *ngIf="positionService.isLoading()" type="table" [rows]="4"></app-loading-state>
+
+        <div *ngIf="!positionService.isLoading()">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
           <div>
             <h2 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -246,6 +254,7 @@ import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/v
             (actionClick)="resetFilters()"
           ></app-empty-state>
         </div>
+      </div>
       </div>
 
       <!-- Slide-Over Drawer -->

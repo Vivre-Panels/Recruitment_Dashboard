@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"recruitment-dashboard/backend/cache"
 	"recruitment-dashboard/backend/database"
 )
 
@@ -87,6 +88,12 @@ func buildFilterWhere(c *gin.Context, tableAlias string) (string, []interface{})
 
 // 1. GET /recruit_api/kpis/overview
 func GetOverviewKPIs(c *gin.Context) {
+	cacheKey := "overview-kpis:" + c.Request.URL.RawQuery
+	if val, ok := cache.Get(cacheKey, 30*time.Second); ok {
+		c.JSON(http.StatusOK, val)
+		return
+	}
+
 	reqWhere, reqArgs := buildFilterWhere(c, "r")
 	appWhere, appArgs := buildFilterWhere(c, "a")
 
@@ -105,52 +112,46 @@ func GetOverviewKPIs(c *gin.Context) {
 
 	var res KPIResponse
 
-	// Open reqs & Required HC
+	// Single Combined Query for Requisitions
 	queryReq := fmt.Sprintf(`
 		SELECT 
-			COUNT(*),
-			ISNULL(SUM(ISNULL([No_Of_Openings], 1)), 0)
+			COUNT(CASE WHEN (r.[Status] = 'Open' OR r.[Status] = 'In-progress' OR r.[Status] IS NULL) THEN 1 END) AS open_reqs,
+			ISNULL(SUM(CASE WHEN (r.[Status] = 'Open' OR r.[Status] = 'In-progress' OR r.[Status] IS NULL) THEN ISNULL(r.[No_Of_Openings], 1) ELSE 0 END), 0) AS total_hc,
+			COUNT(CASE WHEN r.[Bottleneck_Type] IS NOT NULL AND r.[Bottleneck_Type] != '' THEN 1 END) AS active_bottlenecks
 		FROM [dbo].[requisition] r
-		WHERE (r.[Status] = 'Open' OR r.[Status] = 'In-progress' OR r.[Status] IS NULL) AND %s`, reqWhere)
+		WHERE %s`, reqWhere)
 	
-	err := database.DB.QueryRow(queryReq, reqArgs...).Scan(&res.OpenRequisitions, &res.TotalRequiredHC)
-	if err != nil {
-		log.Printf("GetOverviewKPIs req error: %v", err)
-	}
+	_ = database.DB.QueryRow(queryReq, reqArgs...).Scan(&res.OpenRequisitions, &res.TotalRequiredHC, &res.ActiveBottlenecksCount)
 
-	// Total Hires Joined
-	queryAppJoined := fmt.Sprintf(`
-		SELECT COUNT(*)
-		FROM [dbo].[application_pipeline] a
-		WHERE LOWER(ISNULL(a.[Application_Status], '')) = 'joined' AND %s`, appWhere)
-	_ = database.DB.Get(&res.TotalHiresJoined, queryAppJoined, appArgs...)
-
-	// SLA Compliance (candidates without manager/tellecalling lag breaches)
-	querySLA := fmt.Sprintf(`
+	// Single Combined Query for Applications Pipeline
+	queryApp := fmt.Sprintf(`
 		SELECT 
-			COUNT(*),
-			COUNT(CASE WHEN ISNULL(a.[Manager_Round_Schedule_DateTime], '') != '' AND ISNULL(a.[Manager_Interview_DateTime], '') != '' THEN 1 END)
-		FROM [dbo].[application_pipeline] a WHERE %s`, appWhere)
-	var totalApps, slaPassed int
-	_ = database.DB.QueryRow(querySLA, appArgs...).Scan(&totalApps, &slaPassed)
+			COUNT(CASE WHEN LOWER(ISNULL(a.[Application_Status], '')) = 'joined' THEN 1 END) AS total_joined,
+			COUNT(*) AS total_apps,
+			COUNT(CASE WHEN ISNULL(a.[Manager_Round_Schedule_DateTime], '') != '' AND ISNULL(a.[Manager_Interview_DateTime], '') != '' THEN 1 END) AS sla_passed,
+			COUNT(CASE WHEN LOWER(ISNULL(a.[Application_Status], '')) = 'joined' AND LOWER(ISNULL(a.[Retention_7d_Status], '')) = 'retained' THEN 1 END) AS ret7d,
+			COUNT(CASE WHEN LOWER(ISNULL(a.[Application_Status], '')) = 'joined' AND LOWER(ISNULL(a.[Retention_30d_Status], '')) = 'retained' THEN 1 END) AS ret30d,
+			COUNT(CASE WHEN LOWER(ISNULL(a.[Application_Status], '')) = 'joined' AND a.[Is_30d_Failure] = 1 THEN 1 END) AS failures_30d,
+			COUNT(CASE WHEN LOWER(ISNULL(a.[Application_Status], '')) = 'joined' AND a.[Replacement_Required] = 1 THEN 1 END) AS replacement_tickets
+		FROM [dbo].[application_pipeline] a
+		WHERE %s`, appWhere)
+
+	var totalApps, slaPassed, ret7d, ret30d int
+	_ = database.DB.QueryRow(queryApp, appArgs...).Scan(
+		&res.TotalHiresJoined,
+		&totalApps,
+		&slaPassed,
+		&ret7d,
+		&ret30d,
+		&res.Active30dFailures,
+		&res.ReplacementTicketsCount,
+	)
+
 	if totalApps > 0 {
 		res.SLAComplianceRatePercentage = (float64(slaPassed) / float64(totalApps)) * 100.0
 	} else {
 		res.SLAComplianceRatePercentage = 100.0
 	}
-
-	// Retention rates
-	queryRet := fmt.Sprintf(`
-		SELECT 
-			COUNT(CASE WHEN LOWER(ISNULL(a.[Retention_7d_Status], '')) = 'retained' THEN 1 END),
-			COUNT(CASE WHEN LOWER(ISNULL(a.[Retention_30d_Status], '')) = 'retained' THEN 1 END),
-			COUNT(CASE WHEN a.[Is_30d_Failure] = 1 THEN 1 END),
-			COUNT(CASE WHEN a.[Replacement_Required] = 1 THEN 1 END)
-		FROM [dbo].[application_pipeline] a
-		WHERE LOWER(ISNULL(a.[Application_Status], '')) = 'joined' AND %s`, appWhere)
-	
-	var ret7d, ret30d int
-	_ = database.DB.QueryRow(queryRet, appArgs...).Scan(&ret7d, &ret30d, &res.Active30dFailures, &res.ReplacementTicketsCount)
 
 	if res.TotalHiresJoined > 0 {
 		res.RetentionRate7dPercentage = (float64(ret7d) / float64(res.TotalHiresJoined)) * 100.0
@@ -159,13 +160,6 @@ func GetOverviewKPIs(c *gin.Context) {
 		res.RetentionRate7dPercentage = 100.0
 		res.RetentionRate30dPercentage = 100.0
 	}
-
-	// Active Bottlenecks
-	queryBot := fmt.Sprintf(`
-		SELECT COUNT(*)
-		FROM [dbo].[requisition] r
-		WHERE r.[Bottleneck_Type] IS NOT NULL AND r.[Bottleneck_Type] != '' AND %s`, reqWhere)
-	_ = database.DB.Get(&res.ActiveBottlenecksCount, queryBot, reqArgs...)
 
 	// Composite Score calculation (50% Hires vs Target, 20% Deadline, 20% Quality, 10% SLA)
 	hiresVsTargetScore := 100.0
@@ -177,18 +171,43 @@ func GetOverviewKPIs(c *gin.Context) {
 	}
 	res.OverallCompositeScore = (hiresVsTargetScore * 0.50) + (85.0 * 0.20) + (75.0 * 0.20) + (res.SLAComplianceRatePercentage * 0.10)
 
-	c.JSON(http.StatusOK, gin.H{
+	respPayload := gin.H{
 		"success": true,
 		"data":    res,
-	})
+	}
+	cache.Set(cacheKey, respPayload)
+	c.JSON(http.StatusOK, respPayload)
 }
 
 // 2. GET /recruit_api/control-tower
 func GetControlTower(c *gin.Context) {
+	cacheKey := "control-tower:" + c.Request.URL.RawQuery
+	if val, ok := cache.Get(cacheKey, 30*time.Second); ok {
+		c.JSON(http.StatusOK, val)
+		return
+	}
+
+	type TowerItem struct {
+		ID            int64                  `json:"id"`
+		JobOpeningID  string                 `json:"job_opening_id"`
+		RequisitionID string                 `json:"requisition_id"`
+		JobTitle      string                 `json:"job_title"`
+		Department    string                 `json:"department"`
+		RequiredHC    int                    `json:"required_hc"`
+		Priority      string                 `json:"priority"`
+		Owner         string                 `json:"owner"`
+		HiringManager string                 `json:"hiring_manager"`
+		TargetDate    string                 `json:"target_date"`
+		Status        string                 `json:"status"`
+		Funnel        map[string]int         `json:"funnel"`
+		RAGStatus     string                 `json:"rag_status"`
+		Bottleneck    map[string]interface{} `json:"bottleneck"`
+	}
+
 	reqWhere, reqArgs := buildFilterWhere(c, "r")
 
 	query := fmt.Sprintf(`
-		SELECT 
+		SELECT TOP 250
 			r.[Id],
 			ISNULL(CAST(r.[Job_Opening_ID] AS NVARCHAR(255)), '') AS Job_Opening_ID,
 			ISNULL(CAST(r.[Requisition_ID] AS NVARCHAR(255)), '') AS Requisition_ID,
@@ -214,23 +233,41 @@ func GetControlTower(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
-	defer rows.Close()
+	// Fast JOIN Funnel Aggregation for matched requisitions
+	funnelMap := make(map[string]map[string]int)
+	groupQuery := fmt.Sprintf(`
+		SELECT 
+			a.[Job_Opening_ID] AS job_id,
+			COUNT(*) AS total_sourced,
+			COUNT(CASE WHEN ISNULL(a.[Tellecalling_Status], '') != '' THEN 1 END) AS screened,
+			COUNT(CASE WHEN ISNULL(a.[Manager_Round_Schedule_DateTime], '') != '' THEN 1 END) AS scheduled,
+			COUNT(CASE WHEN ISNULL(a.[Manager_Round_Completed_Time], '') != '' OR ISNULL(a.[Manager_Interview_DateTime], '') != '' THEN 1 END) AS completed,
+			COUNT(CASE WHEN LOWER(a.[Application_Status]) LIKE '%%approved%%' THEN 1 END) AS comp_approval,
+			COUNT(CASE WHEN ISNULL(a.[Offer_Accepted_DateTime], '') != '' OR LOWER(a.[Application_Status]) LIKE '%%offer%%' THEN 1 END) AS offered,
+			COUNT(CASE WHEN LOWER(a.[Application_Status]) = 'joined' THEN 1 END) AS joined
+		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
+		INNER JOIN [dbo].[requisition] r WITH (NOLOCK) ON a.[Job_Opening_ID] = r.[Job_Opening_ID]
+		WHERE %s
+		GROUP BY a.[Job_Opening_ID]`, reqWhere)
 
-	type TowerItem struct {
-		ID            int64                  `json:"id"`
-		JobOpeningID  string                 `json:"job_opening_id"`
-		RequisitionID string                 `json:"requisition_id"`
-		JobTitle      string                 `json:"job_title"`
-		Department    string                 `json:"department"`
-		RequiredHC    int                    `json:"required_hc"`
-		Priority      string                 `json:"priority"`
-		Owner         string                 `json:"owner"`
-		HiringManager string                 `json:"hiring_manager"`
-		TargetDate    string                 `json:"target_date"`
-		Status        string                 `json:"status"`
-		Funnel        map[string]int         `json:"funnel"`
-		RAGStatus     string                 `json:"rag_status"`
-		Bottleneck    map[string]interface{} `json:"bottleneck"`
+	fRows, fErr := database.DB.Query(groupQuery, reqArgs...)
+	if fErr == nil {
+		for fRows.Next() {
+			var jID string
+			var fSourced, fScreened, fScheduled, fCompleted, fCompApp, fOffered, fJoined int
+			if err := fRows.Scan(&jID, &fSourced, &fScreened, &fScheduled, &fCompleted, &fCompApp, &fOffered, &fJoined); err == nil {
+				funnelMap[jID] = map[string]int{
+					"sourced":             fSourced,
+					"screened":            fScreened,
+					"interview_scheduled": fScheduled,
+					"interview_completed": fCompleted,
+					"comp_approval":       fCompApp,
+					"offered":             fOffered,
+					"joined":              fJoined,
+				}
+			}
+		}
+		fRows.Close()
 	}
 
 	var results []TowerItem
@@ -249,49 +286,26 @@ func GetControlTower(c *gin.Context) {
 			continue
 		}
 
-		// Calculate funnel counts dynamically from candidate table for this position
-		funnel := map[string]int{
-			"sourced":             0,
-			"screened":            0,
-			"interview_scheduled": 0,
-			"interview_completed": 0,
-			"comp_approval":       0,
-			"offered":             0,
-			"joined":              0,
-		}
-
-		if item.JobOpeningID != "" {
-			fQuery := `
-				SELECT 
-					COUNT(*) AS total_sourced,
-					COUNT(CASE WHEN ISNULL(Tellecalling_Status, '') != '' THEN 1 END) AS screened,
-					COUNT(CASE WHEN ISNULL(Manager_Round_Schedule_DateTime, '') != '' THEN 1 END) AS scheduled,
-					COUNT(CASE WHEN ISNULL(Manager_Round_Completed_Time, '') != '' OR ISNULL(Manager_Interview_DateTime, '') != '' THEN 1 END) AS completed,
-					COUNT(CASE WHEN LOWER(Application_Status) LIKE '%approved%' THEN 1 END) AS comp_approval,
-					COUNT(CASE WHEN ISNULL(Offer_Accepted_DateTime, '') != '' OR LOWER(Application_Status) LIKE '%offer%' THEN 1 END) AS offered,
-					COUNT(CASE WHEN LOWER(Application_Status) = 'joined' THEN 1 END) AS joined
-				FROM [dbo].[application_pipeline]
-				WHERE CAST([Job_Opening_ID] AS NVARCHAR(255)) = @p1`
-			var fSourced, fScreened, fScheduled, fCompleted, fCompApp, fOffered, fJoined int
-			if err := database.DB.QueryRow(fQuery, item.JobOpeningID).Scan(
-				&fSourced, &fScreened, &fScheduled, &fCompleted, &fCompApp, &fOffered, &fJoined,
-			); err == nil {
-				funnel["sourced"] = fSourced
-				funnel["screened"] = fScreened
-				funnel["interview_scheduled"] = fScheduled
-				funnel["interview_completed"] = fCompleted
-				funnel["comp_approval"] = fCompApp
-				funnel["offered"] = fOffered
-				funnel["joined"] = fJoined
+		// Read pre-aggregated funnel counts from map
+		if fData, ok := funnelMap[item.JobOpeningID]; ok {
+			item.Funnel = fData
+		} else {
+			item.Funnel = map[string]int{
+				"sourced":             0,
+				"screened":            0,
+				"interview_scheduled": 0,
+				"interview_completed": 0,
+				"comp_approval":       0,
+				"offered":             0,
+				"joined":              0,
 			}
 		}
-		item.Funnel = funnel
 
 		// Compute Green/Amber/Red RAG status based on agreed business rules
 		rag := "Green"
 		if bType != "" {
 			rag = "Red"
-		} else if funnel["joined"] < item.RequiredHC {
+		} else if item.Funnel["joined"] < item.RequiredHC {
 			if item.Priority == "P0" {
 				rag = "Amber"
 			}
@@ -312,7 +326,9 @@ func GetControlTower(c *gin.Context) {
 		results = []TowerItem{}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": results})
+	respPayload := gin.H{"success": true, "data": results}
+	cache.Set(cacheKey, respPayload)
+	c.JSON(http.StatusOK, respPayload)
 }
 
 // 3. GET /recruit_api/funnel-metrics
@@ -376,7 +392,7 @@ func GetSLASummary(c *gin.Context) {
 	appWhere, appArgs := buildFilterWhere(c, "a")
 
 	query := fmt.Sprintf(`
-		SELECT 
+		SELECT TOP 100
 			a.[Id],
 			ISNULL(a.[Application_ID], '') AS Application_ID,
 			ISNULL(a.[Candidate_Name], '') AS Candidate_Name,
@@ -630,7 +646,7 @@ func GetTalentBank(c *gin.Context) {
 
 	whereStmt := strings.Join(whereClauses, " AND ")
 	query := fmt.Sprintf(`
-		SELECT 
+		SELECT TOP 100
 			a.[Id], ISNULL(a.[Application_ID], '') AS Application_ID,
 			ISNULL(a.[Candidate_Name], '') AS Candidate_Name,
 			ISNULL(a.[Posting_Title], '') AS Position,

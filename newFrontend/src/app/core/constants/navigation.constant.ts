@@ -57,10 +57,10 @@ export const DEPARTMENTS = [
 ];
 
 export const RECRUITERS_LIST = [
-  { id: 'REC-1', name: 'Rahul Sharma', email: 'rahul.s@talentops.io', avatar: 'RS' },
-  { id: 'REC-2', name: 'Priya Nair', email: 'priya.n@talentops.io', avatar: 'PN' },
-  { id: 'REC-3', name: 'Amit Verma', email: 'amit.v@talentops.io', avatar: 'AV' },
-  { id: 'REC-4', name: 'Sneha Patel', email: 'sneha.p@talentops.io', avatar: 'SP' }
+  { id: 'REC-1', name: 'Banashree Roy', email: 'banashree.roy@vivrepanels.com', avatar: 'BR' },
+  { id: 'REC-2', name: 'Meghna Deb Sarkar', email: 'meghna.debsarkar@vivrepanels.com', avatar: 'MD' },
+  { id: 'REC-3', name: 'Poushali Das', email: 'poushali.das@vivrepanels.com', avatar: 'PD' },
+  { id: 'REC-4', name: 'Priya Saha', email: 'priya.saha@vivrepanels.com', avatar: 'PS' }
 ];
 
 export const HIRING_MANAGERS = [

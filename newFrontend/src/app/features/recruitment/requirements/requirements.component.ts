@@ -11,6 +11,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'app-recruitment-requirements',
@@ -24,7 +25,8 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
     StatusBadgeComponent,
     SearchInputComponent,
     IconComponent,
-    ModalComponent
+    ModalComponent,
+    LoadingStateComponent
   ],
   template: `
     <div class="space-y-6">
@@ -47,8 +49,11 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
         </div>
       </app-page-header>
 
+      <!-- Skeleton Cards Loader -->
+      <app-loading-state *ngIf="positionService.isLoading()" type="cards"></app-loading-state>
+
       <!-- Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <div
           *ngFor="let pos of filteredPositions()"
           class="bg-white border border-slate-200/90 rounded-xl p-5 shadow-xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between group"
