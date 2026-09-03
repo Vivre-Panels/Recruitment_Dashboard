@@ -241,13 +241,6 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
       <div *ngIf="activeTab === 'notes'" class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs space-y-6">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="text-sm font-bold text-slate-900">Internal Recruiter Notes</h3>
-          <button
-            type="button"
-            (click)="isAddNoteOpen = true"
-            class="text-xs font-semibold text-brand-600 hover:text-brand-700"
-          >
-            + Add Note
-          </button>
         </div>
 
         <div *ngIf="candidate.notes.length > 0; else noNotes" class="space-y-3">

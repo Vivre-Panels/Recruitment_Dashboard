@@ -76,7 +76,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
 
         <app-kpi-card
           title="Joined"
-          [value]="positionService.totalJoinedHc()"
+          [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
           unit="HC"
           subtitle="Onboarded team members"
           icon="check-circle"
@@ -86,11 +86,11 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
 
         <app-kpi-card
           title="Successful Hires"
-          [value]="positionService.totalJoinedHc()"
+          [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
           unit="Hires"
           subtitle="Passed 30-day retention index"
           icon="award"
-          trend="83.3% Yield"
+          [trend]="(analyticsService.avgRetention30Days() || 100) + '% Yield'"
           [trendPositive]="true"
           accent="brand"
         ></app-kpi-card>
@@ -193,6 +193,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
               <tr class="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 <th class="py-3.5 px-4">Position</th>
                 <th class="py-3.5 px-3">Department</th>
+                <th class="py-3.5 px-3">Team</th>
                 <th class="py-3.5 px-3 text-center">Priority</th>
                 <th class="py-3.5 px-3 text-center">Progress</th>
                 <th class="py-3.5 px-3">Target Date</th>
@@ -214,6 +215,11 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
                 <!-- Department -->
                 <td class="py-3.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
                   {{ pos.department }}
+                </td>
+
+                <!-- Team -->
+                <td class="py-3.5 px-3 font-medium text-slate-600 whitespace-nowrap">
+                  {{ pos.team || '—' }}
                 </td>
 
                 <!-- Priority -->

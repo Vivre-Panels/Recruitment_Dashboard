@@ -144,7 +144,7 @@ func GetApplications(c *gin.Context) {
 	to := c.Query("to")
 
 	pageStr := c.DefaultQuery("page", "1")
-	limitStr := c.DefaultQuery("limit", "100")
+	limitStr := c.DefaultQuery("limit", "2000")
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
@@ -152,10 +152,10 @@ func GetApplications(c *gin.Context) {
 	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit < 1 {
-		limit = 100
+		limit = 2000
 	}
-	if limit > 250 {
-		limit = 250
+	if limit > 10000 {
+		limit = 10000
 	}
 	offset := (page - 1) * limit
 
@@ -205,18 +205,43 @@ func GetApplications(c *gin.Context) {
 		_ = database.DB.Get(&total, countQuery, args...)
 	}
 
-	// Paginated Data Query
-	query := fmt.Sprintf(`SELECT [Id], [Application_ID], [Application_Created_Time], [Application_Status],
-		[Call_Audit_Score], [Call_Priority], [Candidate_Name], [CV_Link],
-		[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [Recruiter_Name],
-		[Source], [Profile_Summary], [Tellecalling_Feedback],
-		[TelleCalling_Time], [Tellecalling_Status], [Offer_Accepted_DateTime],
-		[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time],
-		[Call_Duration], [Performance_Score], [Behaviour_Score], [Performance_Eval_Details],
-		[Behaviour_Eval_Details], [Retention_7d_Status], [Retention_30d_Status],
-		[Is_30d_Failure], [Replacement_Required], [In_Talent_Bank], [Candidate_Attributes],
-		[CreatedAt], [UpdatedAt]
-		FROM [dbo].[application_pipeline] WHERE %s ORDER BY [Application_Created_Time] DESC
+	// Paginated Data Query with Requisition LEFT JOIN (ID & Title matching) + Intelligent Department & Team Derivation
+	query := fmt.Sprintf(`SELECT a.[Id], a.[Application_ID], a.[Application_Created_Time], a.[Application_Status],
+		a.[Call_Audit_Score], a.[Call_Priority], a.[Candidate_Name], a.[CV_Link],
+		a.[CV_Score], a.[Job_Opening_ID], a.[Mobile], a.[Posting_Title],
+		ISNULL(r.[Department], 
+			CASE 
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%sales%%' OR LOWER(a.[Posting_Title]) LIKE '%%asm%%' THEN 'Sales & BD'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%dispatch%%' OR LOWER(a.[Posting_Title]) LIKE '%%warehouse%%' THEN 'Operations Inbound'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%billing%%' OR LOWER(a.[Posting_Title]) LIKE '%%finance%%' THEN 'Finance & Legal'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%hr%%' OR LOWER(a.[Posting_Title]) LIKE '%%recruiter%%' THEN 'Human Resources'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%developer%%' OR LOWER(a.[Posting_Title]) LIKE '%%tech%%' OR LOWER(a.[Posting_Title]) LIKE '%%engineer%%' THEN 'Software & Tech'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%mdo%%' OR LOWER(a.[Posting_Title]) LIKE '%%executive%%' THEN 'MDO'
+				ELSE 'Operations'
+			END
+		) AS Department,
+		ISNULL(r.[Team], 
+			CASE 
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%sales%%' OR LOWER(a.[Posting_Title]) LIKE '%%asm%%' THEN 'Field Sales'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%dispatch%%' OR LOWER(a.[Posting_Title]) LIKE '%%warehouse%%' THEN 'Warehouse Operations'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%billing%%' THEN 'Billing & Invoicing'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%hr%%' THEN 'Talent Acquisition'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%developer%%' OR LOWER(a.[Posting_Title]) LIKE '%%tech%%' THEN 'Core Product Engineering'
+				WHEN LOWER(a.[Posting_Title]) LIKE '%%mdo%%' THEN 'Executive Assistance'
+				ELSE 'Operations Support'
+			END
+		) AS Team,
+		a.[Recruiter_Name], a.[Source], a.[Profile_Summary], a.[Tellecalling_Feedback],
+		a.[TelleCalling_Time], a.[Tellecalling_Status], a.[Offer_Accepted_DateTime],
+		a.[Manager_Interview_DateTime], a.[Manager_Round_Schedule_DateTime], a.[Manager_Round_Completed_Time],
+		a.[Call_Duration], a.[Performance_Score], a.[Behaviour_Score], a.[Performance_Eval_Details],
+		a.[Behaviour_Eval_Details], a.[Retention_7d_Status], a.[Retention_30d_Status],
+		a.[Is_30d_Failure], a.[Replacement_Required], a.[In_Talent_Bank], a.[Candidate_Attributes],
+		a.[CreatedAt], a.[UpdatedAt]
+		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
+		LEFT JOIN [dbo].[requisition] r WITH (NOLOCK) 
+			ON (a.[Job_Opening_ID] = r.[Job_Opening_ID] OR LOWER(a.[Posting_Title]) = LOWER(r.[Job_Title]))
+		WHERE %s ORDER BY a.[Application_Created_Time] DESC
 		OFFSET @p%d ROWS FETCH NEXT @p%d ROWS ONLY`, whereStmt, argIdx, argIdx+1)
 
 	args = append(args, offset, limit)

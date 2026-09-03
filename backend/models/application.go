@@ -15,6 +15,8 @@ type Application struct {
 	JobOpeningID         interface{} `json:"Job_Opening_ID" db:"Job_Opening_ID"`
 	Mobile               *string  `json:"Mobile" db:"Mobile"`
 	PostingTitle         *string  `json:"Posting_Title" db:"Posting_Title"`
+	Department           *string  `json:"Department" db:"Department"`
+	Team                 *string  `json:"Team" db:"Team"`
 	RecruiterName        *string  `json:"Recruiter_Name" db:"Recruiter_Name"`
 	Source               *string  `json:"Source" db:"Source"`
 	ProfileSummary       *string  `json:"Profile_Summary" db:"Profile_Summary"`

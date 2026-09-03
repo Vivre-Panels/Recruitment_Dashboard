@@ -92,6 +92,7 @@ export interface Candidate {
   positionId: string;
   positionTitle: string;
   department: string;
+  team?: string;
   currentStage: PipelineStage;
   recruiter: string;
   experienceYears: number;

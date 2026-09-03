@@ -149,7 +149,7 @@ interface TalentCandidate {
             <!-- Details -->
             <div class="mt-3 space-y-1.5 text-xs text-slate-600">
               <div class="flex justify-between">
-                <span class="text-slate-400">Previous Company:</span>
+                <span class="text-slate-400">Sourcing Channel:</span>
                 <span class="font-semibold text-slate-800">{{ t.currentCompany }}</span>
               </div>
               <div class="flex justify-between">
@@ -179,23 +179,14 @@ interface TalentCandidate {
           </div>
 
           <!-- Card Actions -->
-          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
             <button
               type="button"
               (click)="openTalentProfile(t)"
-              class="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
+              class="px-4 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <app-icon name="eye" [size]="13"></app-icon>
               View Profile
-            </button>
-
-            <button
-              type="button"
-              (click)="openAssignModal(t)"
-              class="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              <app-icon name="plus" [size]="13"></app-icon>
-              Assign to Position
             </button>
           </div>
         </div>

@@ -280,7 +280,7 @@ func GetControlTower(c *gin.Context) {
 
 		err := rows.Scan(
 			&item.ID, &item.JobOpeningID, &item.RequisitionID, &item.JobTitle,
-			&item.Department, &item.RequiredHC, &item.Priority, &item.Owner,
+			&item.Department, &item.Team, &item.RequiredHC, &item.Priority, &item.Owner,
 			&item.HiringManager, &item.TargetDate, &item.Status,
 			&bType, &pSince, &rem, &actOwner,
 		)

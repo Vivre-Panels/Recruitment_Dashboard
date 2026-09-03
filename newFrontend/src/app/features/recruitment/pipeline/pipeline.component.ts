@@ -151,7 +151,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
               <span class="font-bold text-slate-900">{{ cand.recruiter }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-500 font-medium">Current Company:</span>
+              <span class="text-slate-500 font-medium">Sourcing Channel:</span>
               <span class="font-bold text-slate-900">{{ cand.currentCompany }}</span>
             </div>
             <div class="flex justify-between">

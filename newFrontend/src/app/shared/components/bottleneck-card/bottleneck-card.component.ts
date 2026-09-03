@@ -71,35 +71,7 @@ import { IconComponent } from '../icon/icon.component';
         </div>
       </ng-template>
 
-      <!-- Action Buttons -->
-      <div *ngIf="bottleneck" class="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
-        <button
-          type="button"
-          (click)="sendReminder.emit()"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200 transition-colors"
-        >
-          <app-icon name="bell" [size]="13"></app-icon>
-          Send Reminder
-        </button>
 
-        <button
-          type="button"
-          (click)="addRemark.emit()"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors"
-        >
-          <app-icon name="edit" [size]="13"></app-icon>
-          Add Remark
-        </button>
-
-        <button
-          type="button"
-          (click)="updateStatus.emit()"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 text-xs font-semibold rounded-lg border border-brand-200 transition-colors"
-        >
-          <app-icon name="check" [size]="13"></app-icon>
-          Update Status
-        </button>
-      </div>
     </div>
   `
 })

@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { map, tap, catchError, switchMap } from 'rxjs/operators';
 import { Position, HealthStatus, PriorityLevel } from '../models/recruitment.model';
 import { environment } from '../../../environments/environment';
 
@@ -53,11 +53,19 @@ export class PositionService {
       this.isLoading.set(true);
     }
     return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/control-tower`).pipe(
-      map(res => {
-        if (!res.success || !res.data) return this.positionsState();
-        return res.data.map(item => this.mapApiItemToPosition(item));
+      switchMap((res: { success: boolean; data: any[] }): Observable<Position[]> => {
+        if (res.success && res.data && res.data.length > 0) {
+          return of(res.data.map((item: any) => this.mapApiItemToPosition(item)));
+        }
+        return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/requisitions`).pipe(
+          map((reqRes: { success: boolean; data: any[] }) => {
+            if (!reqRes.success || !reqRes.data) return this.positionsState();
+            return reqRes.data.map((item: any) => this.mapApiItemToPosition(item));
+          }),
+          catchError(() => of(this.positionsState()))
+        );
       }),
-      tap(mapped => {
+      tap((mapped: Position[]) => {
         this.positionsState.set(mapped);
         this.isLoading.set(false);
       }),
@@ -74,29 +82,29 @@ export class PositionService {
     const b = item.bottleneck || {};
     
     let status: HealthStatus = 'On Track';
-    if (item.rag_status === 'Red') status = 'Critical';
-    else if (item.rag_status === 'Amber') status = 'At Risk';
+    if (item.rag_status === 'Red' || item.Status === 'Critical') status = 'Critical';
+    else if (item.rag_status === 'Amber' || item.Status === 'At Risk') status = 'At Risk';
 
     return {
-      id: item.job_opening_id || item.requisition_id || `POS-${item.id}`,
-      title: item.job_title || 'Untitled Position',
-      department: item.department || 'Engineering',
+      id: item.job_opening_id || item.Job_Opening_ID || item.requisition_id || item.Requisition_ID || `POS-${item.id}`,
+      title: item.job_title || item.Job_Title || 'Untitled Position',
+      department: item.department || item.Department || 'Engineering',
       team: item.team || item.Team || '',
-      requiredHc: item.required_hc || 1,
+      requiredHc: item.required_hc || item.no_of_openings || item.No_Of_Openings || 1,
       joinedHc: funnel.joined || 0,
-      priority: (item.priority as PriorityLevel) || 'P1',
-      owner: item.owner || 'Recruiter',
+      priority: (item.priority || item.Priority as PriorityLevel) || 'P1',
+      owner: item.owner || item.recruiter_name || item.Recruiter_Name || '',
       recruiterId: `REC-${item.id}`,
-      hiringManager: item.hiring_manager || 'Hiring Manager',
-      targetDate: item.target_date || new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString().split('T')[0],
-      salaryRange: item.salary_range || 'Not Disclosed',
-      location: item.location || 'Pan India',
-      experienceRange: item.experience_required || 'Not Specified',
+      hiringManager: item.hiring_manager || item.Hiring_Manager || '',
+      targetDate: item.target_date || item.Target_Date || '',
+      createdAt: item.opening_date || item.Opening_Date || '',
+      salaryRange: item.salary_range || item.Salary_Range || '',
+      location: item.location || item.Location || '',
+      experienceRange: item.experience_required || item.Experience_Required || '',
       status,
-      mustHaveSkills: item.must_haves ? item.must_haves.split(',') : (item.job_title ? [item.job_title] : []),
+      mustHaveSkills: item.must_haves ? item.must_haves.split(',') : (item.job_title || item.Job_Title ? [item.job_title || item.Job_Title] : []),
       knockoutCriteria: item.knockout_criteria ? item.knockout_criteria.split(',') : [],
-      description: item.remarks || item.job_description || '',
+      description: item.remarks || item.job_description || item.Job_Description || '',
       funnelCounts: {
         sourced: funnel.sourced || 0,
         screened: funnel.screened || 0,

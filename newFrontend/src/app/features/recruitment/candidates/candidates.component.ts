@@ -91,6 +91,12 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
                 <th (click)="setSort('positionTitle')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
                   Applied Role <span *ngIf="sortField() === 'positionTitle'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
                 </th>
+                <th class="app-table-th">
+                  Department
+                </th>
+                <th class="app-table-th">
+                  Team
+                </th>
                 <th (click)="setSort('currentStage')" class="app-table-th cursor-pointer hover:bg-slate-100 transition-colors select-none">
                   Stage <span *ngIf="sortField() === 'currentStage'">{{ sortDir() === 'asc' ? '↑' : '↓' }}</span>
                 </th>
@@ -118,6 +124,16 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
                 <!-- Position -->
                 <td class="app-table-td font-medium text-slate-800">
                   {{ c.positionTitle }}
+                </td>
+
+                <!-- Department -->
+                <td class="app-table-td font-semibold text-slate-800 whitespace-nowrap">
+                  {{ c.department }}
+                </td>
+
+                <!-- Team -->
+                <td class="app-table-td font-medium text-slate-600 whitespace-nowrap">
+                  {{ c.team || '—' }}
                 </td>
 
                 <!-- Stage -->
@@ -201,8 +217,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
               <span class="font-bold text-slate-900">{{ cand.positionTitle }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-500 font-medium">Current Role & Company:</span>
-              <span class="font-bold text-slate-900">{{ cand.currentDesignation }} @ {{ cand.currentCompany }}</span>
+              <span class="text-slate-500 font-medium">Sourcing Channel:</span>
+              <span class="font-bold text-slate-900">{{ cand.currentCompany }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500 font-medium">Experience & Location:</span>
@@ -320,7 +336,7 @@ export class RecruitmentCandidatesComponent implements OnInit {
   recruitmentTabs: ViewTab[] = [
     { label: 'Positions List', icon: 'list', route: '/recruitment/positions' },
     { label: 'Pipeline Kanban', icon: 'kanban', route: '/recruitment/pipeline' },
-    { label: 'Candidates List', icon: 'users', route: '/recruitment/candidates' },
+    { label: 'Applications List', icon: 'users', route: '/recruitment/candidates' },
     { label: 'Requirement Cards', icon: 'file-text', route: '/recruitment/requirements' },
     { label: 'Talent Bank List', icon: 'database', route: '/recruitment/talent-bank' }
   ];

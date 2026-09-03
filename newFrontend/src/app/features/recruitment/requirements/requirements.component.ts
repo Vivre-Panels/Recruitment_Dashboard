@@ -80,22 +80,22 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
                 <span class="font-bold text-slate-900">{{ pos.joinedHc }} Joined / {{ pos.requiredHc }} Target</span>
               </div>
 
-              <div class="flex items-center justify-between">
+              <div *ngIf="pos.targetDate" class="flex items-center justify-between">
                 <span class="text-slate-400">Target Date:</span>
                 <span class="font-mono font-medium text-slate-800">{{ pos.targetDate }}</span>
               </div>
 
-              <div class="flex items-center justify-between">
+              <div *ngIf="pos.location" class="flex items-center justify-between">
                 <span class="text-slate-400">Location:</span>
                 <span class="text-slate-800 truncate max-w-[170px]">{{ pos.location }}</span>
               </div>
 
-              <div class="flex items-center justify-between">
+              <div *ngIf="pos.experienceRange" class="flex items-center justify-between">
                 <span class="text-slate-400">Experience:</span>
                 <span class="font-medium text-slate-800">{{ pos.experienceRange }}</span>
               </div>
 
-              <div class="flex items-center justify-between">
+              <div *ngIf="pos.hiringManager && pos.hiringManager !== 'Hiring Manager'" class="flex items-center justify-between">
                 <span class="text-slate-400">Hiring Manager:</span>
                 <span class="text-slate-800 truncate max-w-[160px]">{{ pos.hiringManager }}</span>
               </div>
@@ -127,14 +127,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             </button>
 
             <div class="flex items-center gap-2">
-              <button
-                type="button"
-                (click)="duplicateRequirement(pos)"
-                class="p-1 text-slate-400 hover:text-slate-700 rounded"
-                title="Duplicate Requisition"
-              >
-                <app-icon name="copy" [size]="14"></app-icon>
-              </button>
               <a
                 [routerLink]="['/recruitment/positions', pos.id]"
                 class="p-1 text-slate-400 hover:text-brand-600 rounded"

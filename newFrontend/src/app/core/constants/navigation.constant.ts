@@ -20,7 +20,7 @@ export const NAV_MODULES: NavItem[] = [
     children: [
       { label: 'All Requisitions', icon: 'file-text', route: '/recruitment/requisitions' },
       { label: 'Positions', icon: 'briefcase', route: '/recruitment/positions' },
-      { label: 'Candidates', icon: 'users', route: '/recruitment/candidates' },
+      { label: 'Applications', icon: 'users', route: '/recruitment/candidates' },
       { label: 'Requirements', icon: 'list', route: '/recruitment/requirements' },
       { label: 'Talent Bank', icon: 'database', route: '/recruitment/talent-bank' }
     ]
