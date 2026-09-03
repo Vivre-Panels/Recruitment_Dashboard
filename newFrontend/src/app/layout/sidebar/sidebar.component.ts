@@ -14,22 +14,35 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
       [ngClass]="isCollapsed ? 'w-16' : 'w-64'"
     >
       <!-- Logo Header -->
-      <div class="h-16 flex items-center px-3 border-b border-slate-800 justify-between">
-        <div class="flex items-center gap-3 overflow-hidden" [ngClass]="{ 'justify-center w-full': isCollapsed }">
-          <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-white shrink-0 font-bold shadow-xs">
-            <app-icon name="tower" [size]="20" class="text-white"></app-icon>
+      <div class="h-16 flex items-center border-b border-slate-800" [ngClass]="isCollapsed ? 'justify-center px-2' : 'justify-between px-3.5'">
+        <!-- Expanded Logo & Brand Text -->
+        <div *ngIf="!isCollapsed" class="flex items-center gap-3 min-w-0 overflow-hidden">
+          <div class="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/60 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+            <img src="assets/logo.svg" alt="TalentOps Logo" class="w-full h-full object-contain" />
           </div>
-          <div *ngIf="!isCollapsed" class="flex flex-col min-w-0 transition-opacity duration-200">
+          <div class="flex flex-col min-w-0 transition-opacity duration-200">
             <span class="text-sm font-bold text-white tracking-tight leading-none truncate">TalentOps</span>
-            <span class="text-[10px] uppercase font-bold text-brand-400 tracking-wider mt-1">Control Tower</span>
           </div>
         </div>
 
+        <!-- Collapsed Icon Button (Click to Expand) -->
         <button 
+          *ngIf="isCollapsed" 
           type="button" 
           (click)="toggleCollapse()"
+          class="w-10 h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 p-1 flex items-center justify-center shrink-0 shadow-2xs transition-all cursor-pointer group relative"
+          title="Click to expand sidebar"
+        >
+          <img src="assets/logo.svg" alt="TalentOps Logo" class="w-full h-full object-contain group-hover:opacity-30 transition-opacity" />
+          <app-icon name="chevron-right" [size]="16" class="text-white absolute opacity-0 group-hover:opacity-100 transition-opacity"></app-icon>
+        </button>
+
+        <!-- Desktop Collapse Button -->
+        <button 
           *ngIf="!isCollapsed"
-          class="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+          type="button" 
+          (click)="toggleCollapse()"
+          class="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
           title="Collapse Sidebar"
         >
           <app-icon name="chevron-left" [size]="16"></app-icon>

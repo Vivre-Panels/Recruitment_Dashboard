@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, EventEmitter, HostListener, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -110,7 +110,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
         <div class="relative">
           <button 
             type="button" 
-            (click)="toggleNotifications()"
+            (click)="toggleNotifications($event)"
             class="relative p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             title="SLA Risk & Alert Center"
           >
@@ -124,6 +124,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
           <!-- Notifications Popup -->
           <div 
             *ngIf="showNotifications"
+            (click)="$event.stopPropagation()"
             class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50"
           >
             <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
@@ -200,6 +201,15 @@ export class HeaderComponent {
   matchedPositions: any[] = [];
   matchedCandidates: any[] = [];
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.relative')) {
+      this.showNotifications = false;
+      this.showSearchResults = false;
+    }
+  }
+
   onSearchInput() {
     const q = this.searchQuery.toLowerCase().trim();
     if (!q) {
@@ -244,7 +254,8 @@ export class HeaderComponent {
     this.router.navigate(['/analytics/sla']);
   }
 
-  toggleNotifications() {
+  toggleNotifications(event?: MouseEvent) {
+    if (event) event.stopPropagation();
     this.showNotifications = !this.showNotifications;
   }
 }
