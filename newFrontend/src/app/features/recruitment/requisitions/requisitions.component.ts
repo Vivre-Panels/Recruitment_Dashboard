@@ -462,7 +462,7 @@ export class RecruitmentRequisitionsComponent implements OnInit {
       const matchesDept = dept === 'ALL' || r.department === dept;
       const matchesPrio = prio === 'ALL' || r.priority === prio;
       const matchesStatus = st === 'ALL' ||
-        (st === 'Open' ? (r.status === 'Open' || !r.status || r.status === 'On Track') : r.status === st);
+        (st === 'Open' ? (r.status === 'Open' || r.status === 'In-progress' || !r.status || r.status === 'On Track') : r.status.toLowerCase() === st.toLowerCase());
 
       return matchesSearch && matchesDept && matchesPrio && matchesStatus;
     });

@@ -334,11 +334,9 @@ export class RecruitmentCandidatesComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   recruitmentTabs: ViewTab[] = [
-    { label: 'Positions List', icon: 'list', route: '/recruitment/positions' },
+    { label: 'All Requisitions', icon: 'file-text', route: '/recruitment/requisitions' },
     { label: 'Pipeline Kanban', icon: 'kanban', route: '/recruitment/pipeline' },
-    { label: 'Applications List', icon: 'users', route: '/recruitment/candidates' },
-    { label: 'Requirement Cards', icon: 'file-text', route: '/recruitment/requirements' },
-    { label: 'Talent Bank List', icon: 'database', route: '/recruitment/talent-bank' }
+    { label: 'Applications List', icon: 'users', route: '/recruitment/candidates' }
   ];
 
   pipelineStages = PIPELINE_STAGES;

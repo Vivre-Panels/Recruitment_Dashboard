@@ -19,10 +19,9 @@ export const NAV_MODULES: NavItem[] = [
     route: '/recruitment/requisitions',
     children: [
       { label: 'All Requisitions', icon: 'file-text', route: '/recruitment/requisitions' },
-      { label: 'Positions', icon: 'briefcase', route: '/recruitment/positions' },
-      { label: 'Applications', icon: 'users', route: '/recruitment/candidates' },
-      { label: 'Requirements', icon: 'list', route: '/recruitment/requirements' },
-      { label: 'Talent Bank', icon: 'database', route: '/recruitment/talent-bank' }
+      { label: 'Applications', icon: 'users', route: '/recruitment/candidates' }
+      // { label: 'Requirements', icon: 'list', route: '/recruitment/requirements' },
+      // { label: 'Talent Bank', icon: 'database', route: '/recruitment/talent-bank' }
     ]
   },
   {

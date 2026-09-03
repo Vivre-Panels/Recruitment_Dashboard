@@ -36,10 +36,8 @@ export const routes: Routes = [
       },
       {
         path: 'recruitment/positions',
-        loadComponent: () =>
-          import('./features/recruitment/positions/positions.component').then(
-            m => m.RecruitmentPositionsComponent
-          )
+        redirectTo: 'recruitment/requisitions',
+        pathMatch: 'full'
       },
       {
         path: 'recruitment/positions/:id',
@@ -69,20 +67,20 @@ export const routes: Routes = [
             m => m.RecruitmentPipelineComponent
           )
       },
-      {
-        path: 'recruitment/requirements',
-        loadComponent: () =>
-          import('./features/recruitment/requirements/requirements.component').then(
-            m => m.RecruitmentRequirementsComponent
-          )
-      },
-      {
-        path: 'recruitment/talent-bank',
-        loadComponent: () =>
-          import('./features/recruitment/talent-bank/talent-bank.component').then(
-            m => m.RecruitmentTalentBankComponent
-          )
-      },
+      // {
+      //   path: 'recruitment/requirements',
+      //   loadComponent: () =>
+      //     import('./features/recruitment/requirements/requirements.component').then(
+      //       m => m.RecruitmentRequirementsComponent
+      //     )
+      // },
+      // {
+      //   path: 'recruitment/talent-bank',
+      //   loadComponent: () =>
+      //     import('./features/recruitment/talent-bank/talent-bank.component').then(
+      //       m => m.RecruitmentTalentBankComponent
+      //     )
+      // },
       // Analytics Routes
       {
         path: 'analytics/funnel',

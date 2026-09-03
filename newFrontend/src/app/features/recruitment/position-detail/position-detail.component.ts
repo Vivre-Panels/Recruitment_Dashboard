@@ -66,14 +66,6 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
             <app-icon name="kanban" [size]="14"></app-icon>
             Open Kanban Pipeline
           </a>
-
-          <button
-            type="button"
-            (click)="isStatusModalOpen = true"
-            class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl shadow-2xs transition-colors"
-          >
-            Update Health
-          </button>
         </div>
       </div>
 
@@ -310,42 +302,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
         ></app-bottleneck-card>
       </div>
 
-      <!-- Update Status Modal -->
-      <app-modal
-        [(isOpen)]="isStatusModalOpen"
-        title="Update Position Health Status"
-        subtitle="Change the RAG status of this position vacancy."
-        size="sm"
-      >
-        <div class="space-y-3 text-xs">
-          <label class="block font-semibold text-slate-700">Health Status</label>
-          <select
-            [(ngModel)]="newStatus"
-            class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-          >
-            <option value="On Track">GREEN — On Track</option>
-            <option value="At Risk">AMBER — At Risk</option>
-            <option value="Critical">RED — Critical</option>
-          </select>
-        </div>
 
-        <div footer class="flex items-center gap-2">
-          <button 
-            type="button" 
-            (click)="isStatusModalOpen = false"
-            class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 border border-slate-300 rounded-lg bg-white"
-          >
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            (click)="saveStatus()"
-            class="px-3.5 py-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded-lg shadow-xs"
-          >
-            Update Status
-          </button>
-        </div>
-      </app-modal>
 
       <!-- Add Remark Modal -->
       <app-modal
