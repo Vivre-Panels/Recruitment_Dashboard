@@ -73,7 +73,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
           </span>
           <app-kpi-card
             title="Pipeline Breakdown"
-            value="View Stages"
+            value="Hiring Insights"
             subtitle="Click to view"
             [showArrow]="true"
             icon="pie-chart"
