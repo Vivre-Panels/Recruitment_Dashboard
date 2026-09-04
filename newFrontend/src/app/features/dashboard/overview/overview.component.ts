@@ -451,8 +451,8 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
               ></app-empty-state>
             </div>
 
-            <!-- Case 2: Filter Selected - 8 Stage Count Tiles Grid -->
-            <div *ngIf="selectedPipelineFilter()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Case 2: Filter Selected - 9 Stage Count Tiles Grid (3x3 Grid) -->
+            <div *ngIf="selectedPipelineFilter()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
                 *ngFor="let stage of pipelineStageConfigs"
                 class="p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between"
@@ -509,8 +509,9 @@ export class DashboardOverviewComponent {
     { key: 'pipeline', label: 'Pipeline', num: '4', icon: 'kanban', bgClass: 'bg-indigo-50/60', borderClass: 'border-indigo-200', textClass: 'text-indigo-700', iconBgClass: 'bg-indigo-100 text-indigo-700' },
     { key: 'in_progress', label: 'In Progress', num: '5', icon: 'clock', bgClass: 'bg-amber-50/60', borderClass: 'border-amber-200', textClass: 'text-amber-700', iconBgClass: 'bg-amber-100 text-amber-700' },
     { key: 'shortlisted', label: 'Shortlisted', num: '6', icon: 'sparkles', bgClass: 'bg-emerald-50/60', borderClass: 'border-emerald-200', textClass: 'text-emerald-700', iconBgClass: 'bg-emerald-100 text-emerald-700' },
-    { key: 'rejected', label: 'Rejected', num: '7', icon: 'x', bgClass: 'bg-rose-50/60', borderClass: 'border-rose-200', textClass: 'text-rose-700', iconBgClass: 'bg-rose-100 text-rose-700' },
-    { key: 'hired', label: 'Hired', num: '8', icon: 'check-circle', bgClass: 'bg-green-50/60', borderClass: 'border-green-200', textClass: 'text-green-700', iconBgClass: 'bg-green-100 text-green-700' },
+    { key: 'follow_up', label: 'Follow Up', num: '7', icon: 'phone', bgClass: 'bg-yellow-50/60', borderClass: 'border-yellow-200', textClass: 'text-yellow-700', iconBgClass: 'bg-yellow-100 text-yellow-700' },
+    { key: 'rejected', label: 'Rejected', num: '8', icon: 'x', bgClass: 'bg-rose-50/60', borderClass: 'border-rose-200', textClass: 'text-rose-700', iconBgClass: 'bg-rose-100 text-rose-700' },
+    { key: 'hired', label: 'Hired', num: '9', icon: 'check-circle', bgClass: 'bg-green-50/60', borderClass: 'border-green-200', textClass: 'text-green-700', iconBgClass: 'bg-green-100 text-green-700' },
   ];
 
   positionOptions = computed(() => {
@@ -533,6 +534,7 @@ export class DashboardOverviewComponent {
       pipeline: 0,
       in_progress: 0,
       shortlisted: 0,
+      follow_up: 0,
       rejected: 0,
       hired: 0
     };
@@ -547,45 +549,47 @@ export class DashboardOverviewComponent {
       return titleLower === filterLower || deptLower === filterLower || titleLower.includes(filterLower) || filterLower.includes(titleLower);
     });
 
+    // Sourced represents the total CV/application count for the position, irrespective of candidate status
+    counts.sourced = candidates.length;
+
     for (const c of candidates) {
-      const stage = (c.currentStage || '').toLowerCase();
-      const status = (c.status || '').toLowerCase();
-      const rawStatus = (c.rawStatus || '').toLowerCase();
-      const s = `${stage} ${status} ${rawStatus}`;
-
-      if (s.includes('reject') || s.includes('drop') || s.includes('unsuitable') || s.includes('not interested')) {
-        counts.rejected++;
-      } else if (s.includes('join') || s.includes('offer') || s.includes('accept') || s.includes('hire') || s.includes('success')) {
-        counts.hired++;
-      } else if (s.includes('select') || s.includes('shortlist') || s.includes('approved')) {
-        counts.shortlisted++;
-      } else if (s.includes('interview') || s.includes('manager')) {
-        counts.interviewed++;
-      } else if (s.includes('screen') || s.includes('telecall')) {
+      // Mandatory Screening Priority Rule:
+      // If TelleCalling_Time IS NOT NULL (and non-empty), MUST count as Screening and STOP further mapping!
+      const tcTime = (c.telleCallingTime || '').trim();
+      if (tcTime !== '' && tcTime !== 'null' && tcTime !== 'undefined') {
         counts.screening++;
-      } else if (s.includes('progress') || s.includes('process')) {
-        counts.in_progress++;
-      } else if (s.includes('pipeline')) {
-        counts.pipeline++;
-      } else {
-        counts.sourced++;
+        continue;
       }
-    }
 
-    const posMatch = this.positionService.positions().find(p => {
-      const t = (p.title || '').toLowerCase().trim();
-      return t === filterLower || t.includes(filterLower) || filterLower.includes(t);
-    });
+      // TelleCalling_Time == NULL -> Apply status-based mapping
+      const stage = (c.currentStage || '').toLowerCase().trim();
+      const status = (c.status || '').toLowerCase().trim();
+      const rawStatus = (c.rawStatus || '').toLowerCase().trim();
+      const sRaw = `${stage} ${status} ${rawStatus}`;
+      const sNorm = sRaw.replace(/[\s\-_]+/g, '');
 
-    if (posMatch && posMatch.funnelCounts) {
-      const f = posMatch.funnelCounts;
-      counts.sourced = Math.max(counts.sourced, f.sourced || 0);
-      counts.screening = Math.max(counts.screening, f.screened || 0);
-      counts.interviewed = Math.max(counts.interviewed, f.interviewed || 0);
-      counts.shortlisted = Math.max(counts.shortlisted, f.selected || 0);
-      counts.hired = Math.max(counts.hired, f.joined || 0);
-      counts.pipeline = Math.max(counts.pipeline, Math.max(0, (f.sourced || 0) - (f.joined || 0)));
-      counts.in_progress = Math.max(counts.in_progress, Math.max(0, (f.screened || 0) + (f.interviewed || 0)));
+      // Target explicit Future Hireable variants without overly broad includes('future')
+      const isFutureHireable = sNorm.includes('futurehireable') || 
+                               sNorm.includes('futurehirable') || 
+                               /future[\s\-_]*(?:hireable|hirable)/i.test(sRaw);
+
+      if (sNorm.includes('followup')) {
+        counts.follow_up++;
+      } else if (sNorm.includes('reject') || sNorm.includes('drop') || sNorm.includes('unsuitable') || sNorm.includes('notinterested') || isFutureHireable) {
+        counts.rejected++;
+      } else if (sNorm.includes('join') || sNorm.includes('offer') || sNorm.includes('accept') || sNorm.includes('hire') || sNorm.includes('success')) {
+        counts.hired++;
+      } else if (sNorm.includes('round') || sNorm.includes('inprogress') || sNorm.includes('process')) {
+        counts.in_progress++;
+      } else if (sNorm.includes('select') || sNorm.includes('shortlist') || sNorm.includes('approved') || sNorm.includes('telecall')) {
+        counts.shortlisted++;
+      } else if (sNorm.includes('interview') || sNorm.includes('manager')) {
+        counts.interviewed++;
+      } else if (sNorm.includes('screen')) {
+        counts.screening++;
+      } else if (sNorm.includes('pipeline')) {
+        counts.pipeline++;
+      }
     }
 
     return counts;

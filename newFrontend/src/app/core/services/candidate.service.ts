@@ -173,7 +173,8 @@ export class CandidateService {
       notes: app.Tellecalling_Feedback ? [{ author: app.Recruiter_Name || 'Recruiter', date: new Date().toISOString().split('T')[0], content: app.Tellecalling_Feedback }] : [],
       resumeUrl: app.CV_Link,
       matchScore: Math.round(cvScoreNum),
-      rawStatus: app.Application_Status || app.Tellecalling_Status || ''
+      rawStatus: `${app.Application_Status || ''} ${app.Tellecalling_Status || ''}`.trim(),
+      telleCallingTime: app.TelleCalling_Time || app.telleCallingTime || ''
     };
   }
 

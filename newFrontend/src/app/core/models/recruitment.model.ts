@@ -111,6 +111,7 @@ export interface Candidate {
   resumeUrl?: string;
   matchScore: number; // % match with job requirements
   rawStatus?: string;
+  telleCallingTime?: string;
 }
 
 export interface Recruiter {
