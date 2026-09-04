@@ -117,9 +117,10 @@ export class CandidateService {
   }
 
   private mapApiAppToCandidate(app: any): Candidate {
+    const statusLower = (app.Application_Status || app.Tellecalling_Status || '').toLowerCase();
+    const isRejected = statusLower.includes('reject') || statusLower.includes('drop') || statusLower.includes('unsuitable') || statusLower.includes('not interested');
+
     let stage: PipelineStage = 'Sourced';
-    const statusLower = (app.Application_Status || '').toLowerCase();
-    
     if (statusLower.includes('joined')) stage = 'Joined';
     else if (statusLower.includes('offer')) stage = 'Offered';
     else if (statusLower.includes('approved') || statusLower.includes('select')) stage = 'Selected';
@@ -155,7 +156,7 @@ export class CandidateService {
       currentSalary: currentSal,
       location: app.Location || 'Kolkata, IN',
       qualityScore: cvScoreNum,
-      status: stage === 'Joined' ? 'Joined' : (statusLower.includes('reject') ? 'Rejected' : 'Active'),
+      status: isRejected ? 'Rejected' : (stage === 'Joined' ? 'Joined' : 'Active'),
       skills: skillList,
       timeline: [
         {
@@ -171,7 +172,8 @@ export class CandidateService {
       interviews: [],
       notes: app.Tellecalling_Feedback ? [{ author: app.Recruiter_Name || 'Recruiter', date: new Date().toISOString().split('T')[0], content: app.Tellecalling_Feedback }] : [],
       resumeUrl: app.CV_Link,
-      matchScore: Math.round(cvScoreNum)
+      matchScore: Math.round(cvScoreNum),
+      rawStatus: app.Application_Status || app.Tellecalling_Status || ''
     };
   }
 

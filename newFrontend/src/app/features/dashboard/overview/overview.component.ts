@@ -539,69 +539,53 @@ export class DashboardOverviewComponent {
 
     if (!filter) return counts;
 
-    const posMatch = this.positionService.positions().find(p => p.title === filter || p.department === filter);
-    const filterLower = filter.toLowerCase();
+    const filterLower = filter.toLowerCase().trim();
     const candidates = this.candidateService.candidates().filter(c => {
       if (filter === 'ALL') return true;
-      const titleLower = (c.positionTitle || '').toLowerCase();
-      const deptLower = (c.department || '').toLowerCase();
+      const titleLower = (c.positionTitle || '').toLowerCase().trim();
+      const deptLower = (c.department || '').toLowerCase().trim();
       return titleLower === filterLower || deptLower === filterLower || titleLower.includes(filterLower) || filterLower.includes(titleLower);
     });
 
-    if (filter === 'ALL') {
-      for (const c of candidates) {
-        const stage = (c.currentStage || '').toLowerCase();
-        const status = (c.status || '').toLowerCase();
+    for (const c of candidates) {
+      const stage = (c.currentStage || '').toLowerCase();
+      const status = (c.status || '').toLowerCase();
+      const rawStatus = (c.rawStatus || '').toLowerCase();
+      const s = `${stage} ${status} ${rawStatus}`;
 
-        if (stage.includes('sourced') || status.includes('sourced')) counts.sourced++;
-        else if (stage.includes('screen') || status.includes('screen')) counts.screening++;
-        else if (stage.includes('interview') || status.includes('interview')) counts.interviewed++;
-        else if (stage.includes('pipeline') || status.includes('pipeline')) counts.pipeline++;
-        else if (stage.includes('progress') || status.includes('process')) counts.in_progress++;
-        else if (stage.includes('select') || stage.includes('shortlist')) counts.shortlisted++;
-        else if (status.includes('reject') || stage.includes('reject')) counts.rejected++;
-        else if (stage.includes('join') || stage.includes('offer') || stage.includes('accept') || stage.includes('success')) counts.hired++;
-        else counts.sourced++;
+      if (s.includes('reject') || s.includes('drop') || s.includes('unsuitable') || s.includes('not interested')) {
+        counts.rejected++;
+      } else if (s.includes('join') || s.includes('offer') || s.includes('accept') || s.includes('hire') || s.includes('success')) {
+        counts.hired++;
+      } else if (s.includes('select') || s.includes('shortlist') || s.includes('approved')) {
+        counts.shortlisted++;
+      } else if (s.includes('interview') || s.includes('manager')) {
+        counts.interviewed++;
+      } else if (s.includes('screen') || s.includes('telecall')) {
+        counts.screening++;
+      } else if (s.includes('progress') || s.includes('process')) {
+        counts.in_progress++;
+      } else if (s.includes('pipeline')) {
+        counts.pipeline++;
+      } else {
+        counts.sourced++;
       }
-    } else {
-      if (posMatch && posMatch.funnelCounts) {
-        const f = posMatch.funnelCounts;
-        counts.sourced = f.sourced || 0;
-        counts.screening = f.screened || 0;
-        counts.interviewed = f.interviewed || 0;
-        counts.pipeline = Math.max(0, (f.sourced || 0) - (f.joined || 0));
-        counts.in_progress = Math.max(0, (f.screened || 0) + (f.interviewed || 0));
-        counts.shortlisted = f.selected || 0;
-        counts.rejected = 0;
-        counts.hired = f.joined || 0;
-      }
+    }
 
-      if (candidates.length > 0) {
-        let candSourced = 0, candScreening = 0, candInterviewed = 0, candPipeline = 0, candInProgress = 0, candShortlisted = 0, candRejected = 0, candHired = 0;
-        for (const c of candidates) {
-          const stage = (c.currentStage || '').toLowerCase();
-          const status = (c.status || '').toLowerCase();
+    const posMatch = this.positionService.positions().find(p => {
+      const t = (p.title || '').toLowerCase().trim();
+      return t === filterLower || t.includes(filterLower) || filterLower.includes(t);
+    });
 
-          if (stage.includes('sourced') || status.includes('sourced')) candSourced++;
-          else if (stage.includes('screen') || status.includes('screen')) candScreening++;
-          else if (stage.includes('interview') || status.includes('interview')) candInterviewed++;
-          else if (stage.includes('pipeline') || status.includes('pipeline')) candPipeline++;
-          else if (stage.includes('progress') || status.includes('process')) candInProgress++;
-          else if (stage.includes('select') || stage.includes('shortlist')) candShortlisted++;
-          else if (status.includes('reject') || stage.includes('reject')) candRejected++;
-          else if (stage.includes('join') || stage.includes('offer') || stage.includes('accept') || stage.includes('success')) candHired++;
-          else candSourced++;
-        }
-
-        counts.sourced = Math.max(counts.sourced, candSourced);
-        counts.screening = Math.max(counts.screening, candScreening);
-        counts.interviewed = Math.max(counts.interviewed, candInterviewed);
-        counts.pipeline = Math.max(counts.pipeline, candPipeline);
-        counts.in_progress = Math.max(counts.in_progress, candInProgress);
-        counts.shortlisted = Math.max(counts.shortlisted, candShortlisted);
-        counts.rejected = Math.max(counts.rejected, candRejected);
-        counts.hired = Math.max(counts.hired, candHired);
-      }
+    if (posMatch && posMatch.funnelCounts) {
+      const f = posMatch.funnelCounts;
+      counts.sourced = Math.max(counts.sourced, f.sourced || 0);
+      counts.screening = Math.max(counts.screening, f.screened || 0);
+      counts.interviewed = Math.max(counts.interviewed, f.interviewed || 0);
+      counts.shortlisted = Math.max(counts.shortlisted, f.selected || 0);
+      counts.hired = Math.max(counts.hired, f.joined || 0);
+      counts.pipeline = Math.max(counts.pipeline, Math.max(0, (f.sourced || 0) - (f.joined || 0)));
+      counts.in_progress = Math.max(counts.in_progress, Math.max(0, (f.screened || 0) + (f.interviewed || 0)));
     }
 
     return counts;

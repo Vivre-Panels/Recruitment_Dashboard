@@ -131,7 +131,10 @@ export default function Overview() {
 
   const filteredApps = selectedFilter ? applications.filter(app => {
     if (selectedFilter === 'ALL') return true
-    return app.Posting_Title === selectedFilter || app.Department === selectedFilter
+    const titleLower = (app.Posting_Title || '').toLowerCase().trim()
+    const filterLower = selectedFilter.toLowerCase().trim()
+    const deptLower = (app.Department || '').toLowerCase().trim()
+    return titleLower === filterLower || deptLower === filterLower || titleLower.includes(filterLower) || filterLower.includes(titleLower)
   }) : []
 
   const stageCounts = STAGE_CONFIG.reduce((acc, stage) => {
@@ -141,23 +144,21 @@ export default function Overview() {
 
   if (selectedFilter) {
     filteredApps.forEach(app => {
-      const s = (app.Application_Status || 'sourced').toLowerCase().trim()
-      if (s.includes('sourced') || s === 'new' || s === 'applied') {
-        stageCounts.sourced++
+      const s = (app.Application_Status || app.Tellecalling_Status || 'sourced').toLowerCase().trim()
+      if (s.includes('reject') || s.includes('drop') || s.includes('unsuitable') || s.includes('not interested')) {
+        stageCounts.rejected++
+      } else if (s.includes('hire') || s.includes('join') || s.includes('offer') || s.includes('accepted')) {
+        stageCounts.hired++
+      } else if (s.includes('shortlist') || s.includes('selected') || s.includes('approved')) {
+        stageCounts.shortlisted++
+      } else if (s.includes('interview') || s.includes('manager')) {
+        stageCounts.interviewed++
       } else if (s.includes('screen') || s.includes('telecall')) {
         stageCounts.screening++
-      } else if (s.includes('interview')) {
-        stageCounts.interviewed++
-      } else if (s.includes('pipeline')) {
-        stageCounts.pipeline++
       } else if (s.includes('in progress') || s.includes('in-progress') || s.includes('process')) {
         stageCounts.in_progress++
-      } else if (s.includes('shortlist') || s.includes('selected')) {
-        stageCounts.shortlisted++
-      } else if (s.includes('reject') || s.includes('drop')) {
-        stageCounts.rejected++
-      } else if (s.includes('hire') || s.includes('join') || s.includes('offer')) {
-        stageCounts.hired++
+      } else if (s.includes('pipeline')) {
+        stageCounts.pipeline++
       } else {
         stageCounts.sourced++
       }

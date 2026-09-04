@@ -110,6 +110,7 @@ export interface Candidate {
   notes: Array<{ author: string; date: string; content: string }>;
   resumeUrl?: string;
   matchScore: number; // % match with job requirements
+  rawStatus?: string;
 }
 
 export interface Recruiter {
