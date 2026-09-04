@@ -34,15 +34,18 @@ import { IconComponent } from '../icon/icon.component';
 
       <!-- Middle: Big Metric Value -->
       <div class="my-auto flex items-baseline gap-1.5 relative z-10">
-        <span class="text-3xl font-extrabold tracking-tight text-slate-900 font-sans leading-none">{{ value }}</span>
+        <span class="text-2xl font-extrabold tracking-tight text-slate-900 font-sans leading-none">{{ value }}</span>
         <span *ngIf="unit" class="text-xs font-bold text-slate-600 leading-none">{{ unit }}</span>
       </div>
 
-      <!-- Bottom Row: Subtitle & Trend Pill -->
+      <!-- Bottom Row: Subtitle & Trend Pill / Clean Arrow -->
       <div class="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs relative z-10 min-h-[24px]">
-        <span class="text-slate-600 font-semibold truncate max-w-[65%]" [title]="subtitle || ''">{{ subtitle }}</span>
+        <span class="text-slate-600 font-semibold truncate" [title]="subtitle || ''">{{ subtitle }}</span>
+        <span *ngIf="showArrow" class="text-brand-600 font-bold text-sm shrink-0 transition-transform group-hover:translate-x-1 flex items-center gap-0.5">
+          <app-icon name="arrow-right" [size]="14"></app-icon>
+        </span>
         <span 
-          *ngIf="trend" 
+          *ngIf="trend && !showArrow" 
           class="font-extrabold inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] shadow-2xs whitespace-nowrap shrink-0"
           [ngClass]="trendPositive ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'"
         >
@@ -58,6 +61,7 @@ export class KpiCardComponent {
   @Input() unit?: string;
   @Input() subtitle?: string;
   @Input() trend?: string;
+  @Input() showArrow = false;
   @Input() trendPositive = true;
   @Input() icon?: string;
   @Input() accent?: 'brand' | 'danger' | 'warning' | 'info';

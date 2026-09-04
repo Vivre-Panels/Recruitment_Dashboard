@@ -27,9 +27,22 @@ function makePieLabel(sep) {
   }
 }
 
+const STAGE_CONFIG = [
+  { key: 'sourced', label: 'Sourced', num: '1', icon: '📥', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
+  { key: 'screening', label: 'Screening', num: '2', icon: '🔍', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' },
+  { key: 'interviewed', label: 'Interviewed', num: '3', icon: '🗣️', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)' },
+  { key: 'pipeline', label: 'Pipeline', num: '4', icon: '🔄', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' },
+  { key: 'in_progress', label: 'In Progress', num: '5', icon: '⏳', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
+  { key: 'shortlisted', label: 'Shortlisted', num: '6', icon: '⭐', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' },
+  { key: 'rejected', label: 'Rejected', num: '7', icon: '❌', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' },
+  { key: 'hired', label: 'Hired', num: '8', icon: '🎉', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.12)' },
+]
+
 export default function Overview() {
   const { summary, requisitions, applications, loading } = useData()
   const [mounted, setMounted] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedFilter, setSelectedFilter] = useState('')
 
   const reqRef = useRef(null)
   const appRef = useRef(null)
@@ -92,6 +105,16 @@ export default function Overview() {
   }).length
 
   const summaryCards = [
+    {
+      label: 'Pipeline Breakdown',
+      value: 'View Stages 📊',
+      isClickable: true,
+      onClick: () => {
+        setSelectedFilter('')
+        setIsModalOpen(true)
+      },
+      subtitle: 'Click to view'
+    },
     { label: 'Total Requisitions', value: summary?.total_requisitions ?? 0 },
     { label: 'Open Positions', value: inProgressCount },
     { label: 'Total Applications', value: summary?.total_applications ?? 0 },
@@ -99,13 +122,60 @@ export default function Overview() {
     { label: 'Avg Call Audit', value: summary?.avg_call_audit_score != null ? `${Math.round(summary.avg_call_audit_score)}%` : '—' },
   ]
 
+  const reqFilterOptions = Array.from(
+    new Set([
+      ...requisitions.map(r => r.PostingTitle || r.Posting_Title).filter(Boolean),
+      ...applications.map(a => a.Posting_Title).filter(Boolean)
+    ])
+  ).sort()
+
+  const filteredApps = selectedFilter ? applications.filter(app => {
+    if (selectedFilter === 'ALL') return true
+    return app.Posting_Title === selectedFilter || app.Department === selectedFilter
+  }) : []
+
+  const stageCounts = STAGE_CONFIG.reduce((acc, stage) => {
+    acc[stage.key] = 0
+    return acc
+  }, {})
+
+  if (selectedFilter) {
+    filteredApps.forEach(app => {
+      const s = (app.Application_Status || 'sourced').toLowerCase().trim()
+      if (s.includes('sourced') || s === 'new' || s === 'applied') {
+        stageCounts.sourced++
+      } else if (s.includes('screen') || s.includes('telecall')) {
+        stageCounts.screening++
+      } else if (s.includes('interview')) {
+        stageCounts.interviewed++
+      } else if (s.includes('pipeline')) {
+        stageCounts.pipeline++
+      } else if (s.includes('in progress') || s.includes('in-progress') || s.includes('process')) {
+        stageCounts.in_progress++
+      } else if (s.includes('shortlist') || s.includes('selected')) {
+        stageCounts.shortlisted++
+      } else if (s.includes('reject') || s.includes('drop')) {
+        stageCounts.rejected++
+      } else if (s.includes('hire') || s.includes('join') || s.includes('offer')) {
+        stageCounts.hired++
+      } else {
+        stageCounts.sourced++
+      }
+    })
+  }
+
   return (
     <div>
       <div className="summary-cards">
         {summaryCards.map((card, i) => (
-          <div className="summary-card" key={i}>
+          <div
+            className={`summary-card ${card.isClickable ? 'summary-card-clickable' : ''}`}
+            key={i}
+            onClick={card.onClick}
+          >
             <div className="summary-card-label">{card.label}</div>
             <div className="summary-card-value">{card.value}</div>
+            {card.subtitle && <div className="summary-card-subtitle">{card.subtitle}</div>}
           </div>
         ))}
       </div>
@@ -212,6 +282,66 @@ export default function Overview() {
           )}
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="pipeline-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="pipeline-modal-header">
+              <div className="pipeline-modal-title-group">
+                <h2>Candidate Pipeline Stages</h2>
+                <span className="pipeline-modal-subtitle">Filter by requisition to view candidate counts</span>
+              </div>
+              <div className="pipeline-modal-actions">
+                <select
+                  className="pipeline-filter-select"
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                >
+                  <option value="">-- Select Filter --</option>
+                  <option value="ALL">All Requisitions</option>
+                  {reqFilterOptions.map((opt, idx) => (
+                    <option key={idx} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <button className="pipeline-modal-close" onClick={() => setIsModalOpen(false)}>
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            <div className="pipeline-modal-body">
+              {!selectedFilter ? (
+                <div className="pipeline-empty-state">
+                  <div className="pipeline-empty-icon">
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                  </div>
+                  <h3>Select Filter to View Data</h3>
+                  <p>Please select a requisition or position from the dropdown filter above to display the candidate stage counts.</p>
+                </div>
+              ) : (
+                <div className="pipeline-tiles-grid">
+                  {STAGE_CONFIG.map((stage) => (
+                    <div className="pipeline-stage-tile" key={stage.key} style={{ borderColor: stage.color }}>
+                      <div className="pipeline-tile-header">
+                        <span className="pipeline-tile-icon" style={{ backgroundColor: stage.bg }}>
+                          {stage.icon}
+                        </span>
+                        <span className="pipeline-tile-name">{stage.num}. {stage.label}</span>
+                      </div>
+                      <div className="pipeline-tile-count" style={{ color: stage.color }}>
+                        {stageCounts[stage.key]}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+

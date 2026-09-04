@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -63,8 +63,25 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
       <!-- Skeleton KPI Grid -->
       <app-loading-state *ngIf="positionService.isLoading()" type="kpis"></app-loading-state>
 
-      <!-- 4 Core Executive KPI Cards -->
-      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- 5 Core Executive KPI Cards (First Tile is Clickable Pipeline Breakdown) -->
+      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="relative group cursor-pointer" (click)="openPipelineModal()">
+          <!-- Live Pulse Beacon -->
+          <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-brand-500 border-2 border-white"></span>
+          </span>
+          <app-kpi-card
+            title="Pipeline Breakdown"
+            value="View Stages"
+            subtitle="Click to view"
+            [showArrow]="true"
+            icon="pie-chart"
+            accent="brand"
+            class="block transition-all duration-300 hover:scale-[1.02] hover:shadow-brand-500/20"
+          ></app-kpi-card>
+        </div>
+
         <app-kpi-card
           title="Required HC"
           [value]="positionService.totalRequiredHc()"
@@ -388,6 +405,73 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
           </button>
         </div>
       </app-drawer>
+
+      <!-- Pipeline Breakdown Modal -->
+      <div *ngIf="isPipelineModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+          <!-- Modal Header -->
+          <div class="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <app-icon name="pie-chart" [size]="18" class="text-brand-600"></app-icon>
+                Candidate Pipeline Stages
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">Filter by position to view 8-stage candidate counts</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <select
+                [ngModel]="selectedPipelineFilter()"
+                (ngModelChange)="selectedPipelineFilter.set($event)"
+                class="px-3.5 py-2 bg-white border border-brand-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer min-w-[200px]"
+              >
+                <option value="">-- Select Position --</option>
+                <option value="ALL">All Positions</option>
+                <option *ngFor="let pos of positionOptions()" [value]="pos">{{ pos }}</option>
+              </select>
+
+              <button
+                type="button"
+                (click)="isPipelineModalOpen = false"
+                class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+              >
+                <app-icon name="x" [size]="18"></app-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 overflow-y-auto flex-1 flex flex-col min-h-[300px]">
+            <!-- Case 1: No Filter Selected (Empty Placeholder) -->
+            <div *ngIf="!selectedPipelineFilter()" class="my-auto py-8">
+              <app-empty-state
+                title="Select Filter to View Data"
+                message="Please select a position or requisition from the dropdown filter above to display candidate stage counts."
+                icon="filter"
+              ></app-empty-state>
+            </div>
+
+            <!-- Case 2: Filter Selected - 8 Stage Count Tiles Grid -->
+            <div *ngIf="selectedPipelineFilter()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div
+                *ngFor="let stage of pipelineStageConfigs"
+                class="p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between"
+                [ngClass]="stage.bgClass + ' ' + stage.borderClass"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">{{ stage.num }}. {{ stage.label }}</span>
+                  <span class="p-2 rounded-xl text-sm" [ngClass]="stage.iconBgClass">
+                    <app-icon [name]="stage.icon" [size]="16"></app-icon>
+                  </span>
+                </div>
+                <div class="text-3xl font-extrabold font-mono" [ngClass]="stage.textClass">
+                  {{ getStageCount(stage.key) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -414,6 +498,124 @@ export class DashboardOverviewComponent {
   selectedDrawerPosition?: Position;
 
   isFilterDrawerOpen = false;
+
+  isPipelineModalOpen = false;
+  selectedPipelineFilter = signal<string>('');
+
+  pipelineStageConfigs = [
+    { key: 'sourced', label: 'Sourced', num: '1', icon: 'users', bgClass: 'bg-blue-50/60', borderClass: 'border-blue-200', textClass: 'text-blue-700', iconBgClass: 'bg-blue-100 text-blue-700' },
+    { key: 'screening', label: 'Screening', num: '2', icon: 'filter', bgClass: 'bg-purple-50/60', borderClass: 'border-purple-200', textClass: 'text-purple-700', iconBgClass: 'bg-purple-100 text-purple-700' },
+    { key: 'interviewed', label: 'Interviewed', num: '3', icon: 'activity', bgClass: 'bg-sky-50/60', borderClass: 'border-sky-200', textClass: 'text-sky-700', iconBgClass: 'bg-sky-100 text-sky-700' },
+    { key: 'pipeline', label: 'Pipeline', num: '4', icon: 'kanban', bgClass: 'bg-indigo-50/60', borderClass: 'border-indigo-200', textClass: 'text-indigo-700', iconBgClass: 'bg-indigo-100 text-indigo-700' },
+    { key: 'in_progress', label: 'In Progress', num: '5', icon: 'clock', bgClass: 'bg-amber-50/60', borderClass: 'border-amber-200', textClass: 'text-amber-700', iconBgClass: 'bg-amber-100 text-amber-700' },
+    { key: 'shortlisted', label: 'Shortlisted', num: '6', icon: 'sparkles', bgClass: 'bg-emerald-50/60', borderClass: 'border-emerald-200', textClass: 'text-emerald-700', iconBgClass: 'bg-emerald-100 text-emerald-700' },
+    { key: 'rejected', label: 'Rejected', num: '7', icon: 'x', bgClass: 'bg-rose-50/60', borderClass: 'border-rose-200', textClass: 'text-rose-700', iconBgClass: 'bg-rose-100 text-rose-700' },
+    { key: 'hired', label: 'Hired', num: '8', icon: 'check-circle', bgClass: 'bg-green-50/60', borderClass: 'border-green-200', textClass: 'text-green-700', iconBgClass: 'bg-green-100 text-green-700' },
+  ];
+
+  positionOptions = computed(() => {
+    const titles = new Set<string>();
+    for (const p of this.positionService.positions()) {
+      if (p.title) titles.add(p.title);
+    }
+    for (const c of this.candidateService.candidates()) {
+      if (c.positionTitle) titles.add(c.positionTitle);
+    }
+    return Array.from(titles).sort();
+  });
+
+  pipelineStageCounts = computed(() => {
+    const filter = this.selectedPipelineFilter();
+    const counts = {
+      sourced: 0,
+      screening: 0,
+      interviewed: 0,
+      pipeline: 0,
+      in_progress: 0,
+      shortlisted: 0,
+      rejected: 0,
+      hired: 0
+    };
+
+    if (!filter) return counts;
+
+    const posMatch = this.positionService.positions().find(p => p.title === filter || p.department === filter);
+    const filterLower = filter.toLowerCase();
+    const candidates = this.candidateService.candidates().filter(c => {
+      if (filter === 'ALL') return true;
+      const titleLower = (c.positionTitle || '').toLowerCase();
+      const deptLower = (c.department || '').toLowerCase();
+      return titleLower === filterLower || deptLower === filterLower || titleLower.includes(filterLower) || filterLower.includes(titleLower);
+    });
+
+    if (filter === 'ALL') {
+      for (const c of candidates) {
+        const stage = (c.currentStage || '').toLowerCase();
+        const status = (c.status || '').toLowerCase();
+
+        if (stage.includes('sourced') || status.includes('sourced')) counts.sourced++;
+        else if (stage.includes('screen') || status.includes('screen')) counts.screening++;
+        else if (stage.includes('interview') || status.includes('interview')) counts.interviewed++;
+        else if (stage.includes('pipeline') || status.includes('pipeline')) counts.pipeline++;
+        else if (stage.includes('progress') || status.includes('process')) counts.in_progress++;
+        else if (stage.includes('select') || stage.includes('shortlist')) counts.shortlisted++;
+        else if (status.includes('reject') || stage.includes('reject')) counts.rejected++;
+        else if (stage.includes('join') || stage.includes('offer') || stage.includes('accept') || stage.includes('success')) counts.hired++;
+        else counts.sourced++;
+      }
+    } else {
+      if (posMatch && posMatch.funnelCounts) {
+        const f = posMatch.funnelCounts;
+        counts.sourced = f.sourced || 0;
+        counts.screening = f.screened || 0;
+        counts.interviewed = f.interviewed || 0;
+        counts.pipeline = Math.max(0, (f.sourced || 0) - (f.joined || 0));
+        counts.in_progress = Math.max(0, (f.screened || 0) + (f.interviewed || 0));
+        counts.shortlisted = f.selected || 0;
+        counts.rejected = 0;
+        counts.hired = f.joined || 0;
+      }
+
+      if (candidates.length > 0) {
+        let candSourced = 0, candScreening = 0, candInterviewed = 0, candPipeline = 0, candInProgress = 0, candShortlisted = 0, candRejected = 0, candHired = 0;
+        for (const c of candidates) {
+          const stage = (c.currentStage || '').toLowerCase();
+          const status = (c.status || '').toLowerCase();
+
+          if (stage.includes('sourced') || status.includes('sourced')) candSourced++;
+          else if (stage.includes('screen') || status.includes('screen')) candScreening++;
+          else if (stage.includes('interview') || status.includes('interview')) candInterviewed++;
+          else if (stage.includes('pipeline') || status.includes('pipeline')) candPipeline++;
+          else if (stage.includes('progress') || status.includes('process')) candInProgress++;
+          else if (stage.includes('select') || stage.includes('shortlist')) candShortlisted++;
+          else if (status.includes('reject') || stage.includes('reject')) candRejected++;
+          else if (stage.includes('join') || stage.includes('offer') || stage.includes('accept') || stage.includes('success')) candHired++;
+          else candSourced++;
+        }
+
+        counts.sourced = Math.max(counts.sourced, candSourced);
+        counts.screening = Math.max(counts.screening, candScreening);
+        counts.interviewed = Math.max(counts.interviewed, candInterviewed);
+        counts.pipeline = Math.max(counts.pipeline, candPipeline);
+        counts.in_progress = Math.max(counts.in_progress, candInProgress);
+        counts.shortlisted = Math.max(counts.shortlisted, candShortlisted);
+        counts.rejected = Math.max(counts.rejected, candRejected);
+        counts.hired = Math.max(counts.hired, candHired);
+      }
+    }
+
+    return counts;
+  });
+
+  openPipelineModal() {
+    this.selectedPipelineFilter.set('');
+    this.isPipelineModalOpen = true;
+  }
+
+  getStageCount(key: string): number {
+    const counts = this.pipelineStageCounts() as Record<string, number>;
+    return counts[key] || 0;
+  }
 
   attentionPositions = computed(() => {
     return this.positionService.positions().filter(p => p.status === 'Critical' || p.status === 'At Risk').slice(0, 3);
@@ -454,3 +656,4 @@ export class DashboardOverviewComponent {
     this.isFilterDrawerOpen = false;
   }
 }
+
