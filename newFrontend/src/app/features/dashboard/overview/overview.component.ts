@@ -408,9 +408,9 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
 
       <!-- Pipeline Breakdown Modal -->
       <div *ngIf="isPipelineModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative">
           <!-- Modal Header -->
-          <div class="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-30 rounded-t-2xl">
             <div>
               <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 <app-icon name="pie-chart" [size]="18" class="text-brand-600"></app-icon>
@@ -420,19 +420,79 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             </div>
 
             <div class="flex items-center gap-3">
-              <select
-                [ngModel]="selectedPipelineFilter()"
-                (ngModelChange)="selectedPipelineFilter.set($event)"
-                class="px-3.5 py-2 bg-white border border-brand-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer min-w-[200px]"
-              >
-                <option value="">-- Select Position --</option>
-                <option value="ALL">All Positions</option>
-                <option *ngFor="let pos of positionOptions()" [value]="pos">{{ pos }}</option>
-              </select>
+              <!-- Searchbar + Dropdown Combo -->
+              <div class="relative min-w-[260px] sm:min-w-[300px]">
+                <div class="relative flex items-center h-9">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10 text-slate-400">
+                    <app-icon name="search" [size]="14"></app-icon>
+                  </div>
+                  <input
+                    type="text"
+                    [ngModel]="pipelineSearchQuery()"
+                    (ngModelChange)="pipelineSearchQuery.set($event); isPipelineDropdownOpen.set(true)"
+                    (focus)="isPipelineDropdownOpen.set(true)"
+                    placeholder="Search position or select..."
+                    class="w-full pl-9 pr-9 h-full bg-white border border-brand-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 leading-normal"
+                  />
+                  <button
+                    *ngIf="pipelineSearchQuery() || selectedPipelineFilter()"
+                    type="button"
+                    (click)="clearPipelineFilter()"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 cursor-pointer flex items-center justify-center z-10 transition-colors"
+                  >
+                    <app-icon name="x" [size]="12"></app-icon>
+                  </button>
+                </div>
 
+                <!-- Floating Dropdown Menu -->
+                <div
+                  *ngIf="isPipelineDropdownOpen()"
+                  class="absolute left-0 w-full min-w-[280px] sm:min-w-[320px] mt-1.5 bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] max-h-64 overflow-y-auto py-1 text-xs divide-y divide-slate-100"
+                >
+                  <div class="py-1">
+                    <button
+                      type="button"
+                      (click)="selectPipelinePosition('')"
+                      class="w-full text-left px-4 py-2 font-medium hover:bg-slate-50 text-slate-500 cursor-pointer flex items-center justify-between"
+                      [class.bg-slate-50]="selectedPipelineFilter() === ''"
+                    >
+                      <span>-- Select Position --</span>
+                      <app-icon *ngIf="selectedPipelineFilter() === ''" name="check" [size]="12" class="text-slate-400"></app-icon>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="selectPipelinePosition('ALL')"
+                      class="w-full text-left px-4 py-2 font-bold hover:bg-brand-50 text-brand-700 cursor-pointer flex items-center justify-between"
+                      [class.bg-brand-50]="selectedPipelineFilter() === 'ALL'"
+                    >
+                      <span>All Positions</span>
+                      <app-icon *ngIf="selectedPipelineFilter() === 'ALL'" name="check" [size]="12" class="text-brand-600"></app-icon>
+                    </button>
+                  </div>
+
+                  <div class="py-1">
+                    <div *ngIf="filteredPositionOptions().length === 0" class="px-4 py-2.5 text-slate-400 italic text-[11px]">
+                      No matching positions found
+                    </div>
+                    <button
+                      *ngFor="let pos of filteredPositionOptions()"
+                      type="button"
+                      (click)="selectPipelinePosition(pos)"
+                      class="w-full text-left px-4 py-2 font-medium hover:bg-brand-50 text-slate-800 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
+                      [class.bg-brand-50]="selectedPipelineFilter() === pos"
+                      [class.font-bold]="selectedPipelineFilter() === pos"
+                    >
+                      <span class="truncate pr-2">{{ pos }}</span>
+                      <app-icon *ngIf="selectedPipelineFilter() === pos" name="check" [size]="12" class="text-brand-600 shrink-0 ml-2"></app-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Close Modal Button -->
               <button
                 type="button"
-                (click)="isPipelineModalOpen = false"
+                (click)="isPipelineModalOpen = false; isPipelineDropdownOpen.set(false)"
                 class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
               >
                 <app-icon name="x" [size]="18"></app-icon>
@@ -501,6 +561,15 @@ export class DashboardOverviewComponent {
 
   isPipelineModalOpen = false;
   selectedPipelineFilter = signal<string>('');
+  isPipelineDropdownOpen = signal<boolean>(false);
+  pipelineSearchQuery = signal<string>('');
+
+  filteredPositionOptions = computed(() => {
+    const q = this.pipelineSearchQuery().toLowerCase().trim();
+    const list = this.positionOptions();
+    if (!q) return list;
+    return list.filter(p => p.toLowerCase().includes(q));
+  });
 
   pipelineStageConfigs = [
     { key: 'sourced', label: 'Sourced', num: '1', icon: 'users', bgClass: 'bg-blue-50/60', borderClass: 'border-blue-200', textClass: 'text-blue-700', iconBgClass: 'bg-blue-100 text-blue-700' },
@@ -545,8 +614,7 @@ export class DashboardOverviewComponent {
     const candidates = this.candidateService.candidates().filter(c => {
       if (filter === 'ALL') return true;
       const titleLower = (c.positionTitle || '').toLowerCase().trim();
-      const deptLower = (c.department || '').toLowerCase().trim();
-      return titleLower === filterLower || deptLower === filterLower || titleLower.includes(filterLower) || filterLower.includes(titleLower);
+      return titleLower === filterLower;
     });
 
     // Sourced represents the total CV/application count for the position, irrespective of candidate status
@@ -597,7 +665,27 @@ export class DashboardOverviewComponent {
 
   openPipelineModal() {
     this.selectedPipelineFilter.set('');
+    this.pipelineSearchQuery.set('');
+    this.isPipelineDropdownOpen.set(false);
     this.isPipelineModalOpen = true;
+  }
+
+  selectPipelinePosition(pos: string) {
+    this.selectedPipelineFilter.set(pos);
+    if (pos === '') {
+      this.pipelineSearchQuery.set('');
+    } else if (pos === 'ALL') {
+      this.pipelineSearchQuery.set('All Positions');
+    } else {
+      this.pipelineSearchQuery.set(pos);
+    }
+    this.isPipelineDropdownOpen.set(false);
+  }
+
+  clearPipelineFilter() {
+    this.selectedPipelineFilter.set('');
+    this.pipelineSearchQuery.set('');
+    this.isPipelineDropdownOpen.set(true);
   }
 
   getStageCount(key: string): number {
