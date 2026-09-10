@@ -30,8 +30,8 @@ import { CommonModule } from '@angular/common';
     </div>
 
     <!-- Skeleton KPI Grid Mode -->
-    <div *ngIf="type === 'kpis'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
-      <div *ngFor="let k of [1,2,3,4]" class="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-3">
+    <div *ngIf="type === 'kpis'" class="flex flex-nowrap overflow-x-auto gap-4 pb-3.5 pt-0.5 custom-scrollbar animate-pulse">
+      <div *ngFor="let k of [1,2,3,4,5,6]" class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 p-4 bg-white border border-slate-200/90 rounded-2xl space-y-3">
         <div class="flex justify-between items-center">
           <div class="h-3 bg-slate-200 rounded w-24"></div>
           <div class="w-8 h-8 bg-slate-100 rounded-xl"></div>

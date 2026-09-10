@@ -54,6 +54,7 @@ func main() {
 		api.GET("/retention/metrics", handlers.GetRetentionMetrics)
 		api.GET("/talent-bank", handlers.GetTalentBank)
 		api.GET("/reports/weekly-review", handlers.GetWeeklyReviewReport)
+		api.GET("/recruiter-insights", handlers.GetRecruiterInsights)
 	}
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)

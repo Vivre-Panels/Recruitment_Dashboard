@@ -132,6 +132,20 @@ export interface Recruiter {
   status: 'Top Performer' | 'On Target' | 'Needs Improvement';
 }
 
+export interface RecruiterInsightItem {
+  recruiter_name: string;
+  position: string;
+  cv_sourced: number;
+  approved: number;
+  interviewed: number;
+  selected: number;
+  offered: number;
+  accepted: number;
+  joined: number;
+  successful_hire: number;
+  bottleneck_reason?: string;
+}
+
 export interface SlaRecord {
   id: string;
   positionId: string;

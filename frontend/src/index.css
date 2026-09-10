@@ -1073,13 +1073,18 @@ a { text-decoration: none; color: inherit; }
 }
 
 .summary-cards {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 16px;
   margin-bottom: 32px;
+  padding-bottom: 8px;
+  scroll-behavior: smooth;
 }
 
 .summary-card {
+  min-width: 240px;
+  flex: 1 0 auto;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);

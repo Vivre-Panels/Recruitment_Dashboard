@@ -724,3 +724,164 @@ func GetWeeklyReviewReport(c *gin.Context) {
 		"data":    report,
 	})
 }
+
+// 9. GET /recruit_api/recruiter-insights
+func GetRecruiterInsights(c *gin.Context) {
+	recruiterParam := strings.TrimSpace(c.Query("recruiter"))
+	positionParam := strings.TrimSpace(c.Query("position"))
+	fromParam := strings.TrimSpace(c.Query("from"))
+	toParam := strings.TrimSpace(c.Query("to"))
+
+	whereClauses := []string{"1=1"}
+	args := []interface{}{}
+	argIdx := 1
+
+	if recruiterParam != "" && recruiterParam != "ALL" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(ISNULL(a.[Recruiter_Name], '') LIKE @p%d OR ISNULL(r.[Recruiter_Name], '') LIKE @p%d)", argIdx, argIdx+1))
+		args = append(args, "%"+recruiterParam+"%", "%"+recruiterParam+"%")
+		argIdx += 2
+	}
+
+	if positionParam != "" && positionParam != "ALL" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(ISNULL(a.[Posting_Title], '') LIKE @p%d OR ISNULL(r.[Job_Title], '') LIKE @p%d)", argIdx, argIdx+1))
+		args = append(args, "%"+positionParam+"%", "%"+positionParam+"%")
+		argIdx += 2
+	}
+
+	if fromParam != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(a.[Application_Created_Time] >= @p%d OR r.[Opening_Date] >= @p%d)", argIdx, argIdx+1))
+		args = append(args, fromParam, fromParam)
+		argIdx += 2
+	}
+
+	if toParam != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(a.[Application_Created_Time] <= DATEADD(DAY, 1, @p%d) OR r.[Opening_Date] <= DATEADD(DAY, 1, @p%d))", argIdx, argIdx+1))
+		args = append(args, toParam, toParam)
+		argIdx += 2
+	}
+
+	whereStmt := strings.Join(whereClauses, " AND ")
+
+	query := fmt.Sprintf(`
+		SELECT 
+			ISNULL(NULLIF(a.[Recruiter_Name], ''), ISNULL(r.[Recruiter_Name], 'Unassigned')) AS recruiter_name,
+			ISNULL(NULLIF(a.[Posting_Title], ''), ISNULL(r.[Job_Title], 'General')) AS position,
+			COUNT(1) AS cv_sourced,
+			COUNT(CASE WHEN LOWER(a.[Application_Status]) LIKE '%%approve%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%shortlist%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%qualified%%' THEN 1 END) AS approved,
+			COUNT(CASE WHEN ISNULL(a.[Manager_Round_Completed_Time], '') != '' 
+			             OR ISNULL(a.[Manager_Interview_DateTime], '') != '' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%interview%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%round%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%test%%' THEN 1 END) AS interviewed,
+			COUNT(CASE WHEN LOWER(a.[Application_Status]) LIKE '%%select%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%cleared%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%completed%%' THEN 1 END) AS selected,
+			COUNT(CASE WHEN ISNULL(a.[Offer_Accepted_DateTime], '') != '' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%offer%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%loi%%' THEN 1 END) AS offered,
+			COUNT(CASE WHEN ISNULL(a.[Offer_Accepted_DateTime], '') != '' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%accept%%' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%hired%%' THEN 1 END) AS accepted,
+			COUNT(CASE WHEN LOWER(a.[Application_Status]) = 'joined' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%onboard%%' THEN 1 END) AS joined,
+			COUNT(CASE WHEN LOWER(a.[Application_Status]) = 'joined' 
+			             OR LOWER(a.[Application_Status]) LIKE '%%hired%%' THEN 1 END) AS successful_hire,
+			MAX(ISNULL(r.[Bottleneck_Type], '')) AS bottleneck_type,
+			MAX(ISNULL(r.[Remarks], '')) AS bottleneck_remarks,
+			MAX(ISNULL(CONVERT(NVARCHAR(25), r.[Pending_Since], 120), '')) AS pending_since
+		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
+		LEFT JOIN [dbo].[requisition] r WITH (NOLOCK) ON a.[Job_Opening_ID] = r.[Job_Opening_ID]
+		WHERE %s
+		GROUP BY 
+			ISNULL(NULLIF(a.[Recruiter_Name], ''), ISNULL(r.[Recruiter_Name], 'Unassigned')),
+			ISNULL(NULLIF(a.[Posting_Title], ''), ISNULL(r.[Job_Title], 'General'))
+		ORDER BY recruiter_name, position`, whereStmt)
+
+	rows, err := database.DB.Query(query, args...)
+	if err != nil {
+		log.Printf("GetRecruiterInsights query error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	type InsightRow struct {
+		RecruiterName    string `json:"recruiter_name"`
+		Position         string `json:"position"`
+		CVSourced        int    `json:"cv_sourced"`
+		Approved         int    `json:"approved"`
+		Interviewed      int    `json:"interviewed"`
+		Selected         int    `json:"selected"`
+		Offered          int    `json:"offered"`
+		Accepted         int    `json:"accepted"`
+		Joined           int    `json:"joined"`
+		SuccessfulHire   int    `json:"successful_hire"`
+		BottleneckReason string `json:"bottleneck_reason"`
+	}
+
+	var results []InsightRow
+
+	for rows.Next() {
+		var row InsightRow
+		var bType, bRemarks, bPending string
+		if err := rows.Scan(&row.RecruiterName, &row.Position, &row.CVSourced, &row.Approved, &row.Interviewed, &row.Selected, &row.Offered, &row.Accepted, &row.Joined, &row.SuccessfulHire, &bType, &bRemarks, &bPending); err != nil {
+			continue
+		}
+
+		if bType != "" || bRemarks != "" {
+			reason := bType
+			if bRemarks != "" {
+				if reason != "" {
+					reason += ": " + bRemarks
+				} else {
+					reason = bRemarks
+				}
+			}
+			if bPending != "" {
+				reason += " (Pending since " + bPending + ")"
+			}
+			row.BottleneckReason = reason
+		}
+
+		results = append(results, row)
+	}
+
+	if results == nil {
+		results = []InsightRow{}
+	}
+
+	var recruiters []string
+	_ = database.DB.Select(&recruiters, `
+		SELECT DISTINCT [Recruiter_Name] 
+		FROM (
+			SELECT [Recruiter_Name] FROM [dbo].[application_pipeline] WHERE [Recruiter_Name] IS NOT NULL AND [Recruiter_Name] != ''
+			UNION
+			SELECT [Recruiter_Name] FROM [dbo].[requisition] WHERE [Recruiter_Name] IS NOT NULL AND [Recruiter_Name] != ''
+		) x ORDER BY [Recruiter_Name]`)
+	if recruiters == nil {
+		recruiters = []string{}
+	}
+
+	var positions []string
+	_ = database.DB.Select(&positions, `
+		SELECT DISTINCT [Posting_Title] 
+		FROM (
+			SELECT [Posting_Title] FROM [dbo].[application_pipeline] WHERE [Posting_Title] IS NOT NULL AND [Posting_Title] != ''
+			UNION
+			SELECT [Job_Title] AS [Posting_Title] FROM [dbo].[requisition] WHERE [Job_Title] IS NOT NULL AND [Job_Title] != ''
+		) y ORDER BY [Posting_Title]`)
+	if positions == nil {
+		positions = []string{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    results,
+		"filter_options": gin.H{
+			"recruiters": recruiters,
+			"positions":  positions,
+		},
+	})
+}

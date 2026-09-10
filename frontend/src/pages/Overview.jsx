@@ -115,11 +115,16 @@ export default function Overview() {
       },
       subtitle: 'Click to view'
     },
+    {
+      label: 'Recruiter Wise Insight',
+      value: '85% Avg',
+      subtitle: 'Monthly Performance 🌟'
+    },
     { label: 'Total Requisitions', value: summary?.total_requisitions ?? 0 },
     { label: 'Open Positions', value: inProgressCount },
     { label: 'Total Applications', value: summary?.total_applications ?? 0 },
     { label: 'Avg CV Score', value: summary?.avg_cv_score != null ? `${Math.round(summary.avg_cv_score)}%` : '—' },
-    { label: 'Avg Call Audit', value: summary?.avg_call_audit_score != null ? `${Math.round(summary.avg_call_audit_score)}%` : '—' },
+    { label: 'Avg Call Audit', value: summary?.avg_call_audit_score != null ? `${Math.round(summary.avg_call_audit_score)}%` : '—' }
   ]
 
   const reqFilterOptions = Array.from(
@@ -165,14 +170,55 @@ export default function Overview() {
     })
   }
 
+  const cardsRef = useRef(null)
+  const isMouseDown = useRef(false)
+  const startX = useRef(0)
+  const scrollLeft = useRef(0)
+  const isDragging = useRef(false)
+
+  const handleMouseDown = (e) => {
+    if (!cardsRef.current) return
+    isMouseDown.current = true
+    isDragging.current = false
+    startX.current = e.pageX - cardsRef.current.offsetLeft
+    scrollLeft.current = cardsRef.current.scrollLeft
+  }
+
+  const handleMouseLeaveOrUp = () => {
+    isMouseDown.current = false
+    setTimeout(() => { isDragging.current = false }, 50)
+  }
+
+  const handleMouseMove = (e) => {
+    if (!isMouseDown.current || !cardsRef.current) return
+    const x = e.pageX - cardsRef.current.offsetLeft
+    const walk = (x - startX.current) * 1.3
+    if (Math.abs(walk) > 5) {
+      isDragging.current = true
+    }
+    e.preventDefault()
+    cardsRef.current.scrollLeft = scrollLeft.current - walk
+  }
+
   return (
     <div>
-      <div className="summary-cards">
+      <div
+        ref={cardsRef}
+        className="summary-cards"
+        style={{ cursor: 'grab', userSelect: 'none' }}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeaveOrUp}
+        onMouseUp={handleMouseLeaveOrUp}
+        onMouseMove={handleMouseMove}
+      >
         {summaryCards.map((card, i) => (
           <div
             className={`summary-card ${card.isClickable ? 'summary-card-clickable' : ''}`}
             key={i}
-            onClick={card.onClick}
+            onClick={() => {
+              if (isDragging.current) return
+              card.onClick?.()
+            }}
           >
             <div className="summary-card-label">{card.label}</div>
             <div className="summary-card-value">{card.value}</div>

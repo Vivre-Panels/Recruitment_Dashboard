@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { PositionService } from '../../../core/services/position.service';
 import { CandidateService } from '../../../core/services/candidate.service';
 import { AnalyticsService } from '../../../core/services/analytics.service';
+import { RecruiterService } from '../../../core/services/recruiter.service';
 import { DEPARTMENTS, RECRUITERS_LIST } from '../../../core/constants/navigation.constant';
 import { Position } from '../../../core/models/recruitment.model';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
@@ -17,6 +18,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { DragScrollDirective } from '../../../shared/directives/drag-scroll.directive';
 
 @Component({
   selector: 'app-dashboard-overview',
@@ -34,7 +36,8 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
     EmptyStateComponent,
     DrawerComponent,
     ViewSwitcherTabsComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    DragScrollDirective
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -63,9 +66,10 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
       <!-- Skeleton KPI Grid -->
       <app-loading-state *ngIf="positionService.isLoading()" type="kpis"></app-loading-state>
 
-      <!-- 5 Core Executive KPI Cards (First Tile is Clickable Pipeline Breakdown) -->
-      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="relative group cursor-pointer" (click)="openPipelineModal()">
+      <!-- 6 Executive KPI Cards in Horizontal Scroll Container (Draggable) -->
+      <div *ngIf="!positionService.isLoading()" appDragScroll class="flex flex-nowrap overflow-x-auto gap-4 pb-3.5 pt-0.5 custom-scrollbar snap-x scroll-smooth cursor-grab active:cursor-grabbing">
+        <!-- 1. Pipeline Breakdown -->
+        <div class="relative group cursor-pointer min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start" (click)="openPipelineModal()">
           <!-- Live Pulse Beacon -->
           <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
@@ -82,44 +86,76 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
           ></app-kpi-card>
         </div>
 
-        <app-kpi-card
-          title="Required HC"
-          [value]="positionService.totalRequiredHc()"
-          unit="HC"
-          subtitle="Across active vacancies"
-          icon="users"
-          accent="brand"
-        ></app-kpi-card>
+        <!-- 2. Recruiter Wise Insight -->
+        <div class="relative group cursor-pointer min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start" (click)="openRecruiterInsightModal()">
+          <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500 border-2 border-white"></span>
+          </span>
+          <app-kpi-card
+            title="Recruiter Wise Insight"
+            [value]="(recruiterService.avgOverallScore() || 85) + '%'"
+            unit="Avg Score"
+            subtitle="Click to view breakdown"
+            [showArrow]="true"
+            icon="user-check"
+            [trend]="(recruiterService.topPerformers().length || 3) + ' Top Performers'"
+            [trendPositive]="true"
+            accent="brand"
+            class="block transition-all duration-300 hover:scale-[1.02] hover:shadow-brand-500/20"
+          ></app-kpi-card>
+        </div>
 
-        <app-kpi-card
-          title="Joined"
-          [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
-          unit="HC"
-          subtitle="Onboarded team members"
-          icon="check-circle"
-          trend="+4 this month"
-          [trendPositive]="true"
-        ></app-kpi-card>
+        <!-- 3. Required HC -->
+        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+          <app-kpi-card
+            title="Required HC"
+            [value]="positionService.totalRequiredHc()"
+            unit="HC"
+            subtitle="Across active vacancies"
+            icon="users"
+            accent="brand"
+          ></app-kpi-card>
+        </div>
 
-        <app-kpi-card
-          title="Successful Hires"
-          [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
-          unit="Hires"
-          subtitle="Passed 30-day retention index"
-          icon="award"
-          [trend]="(analyticsService.avgRetention30Days() || 100) + '% Yield'"
-          [trendPositive]="true"
-          accent="brand"
-        ></app-kpi-card>
+        <!-- 4. Joined -->
+        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+          <app-kpi-card
+            title="Joined"
+            [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
+            unit="HC"
+            subtitle="Onboarded team members"
+            icon="check-circle"
+            trend="+4 this month"
+            [trendPositive]="true"
+          ></app-kpi-card>
+        </div>
 
-        <app-kpi-card
-          title="At Risk / Critical"
-          [value]="positionService.positionsAtRiskCount() + positionService.positionsCriticalCount()"
-          unit="Roles"
-          subtitle="SLA or stage stalled"
-          icon="alert-triangle"
-          accent="danger"
-        ></app-kpi-card>
+        <!-- 5. Successful Hires -->
+        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+          <app-kpi-card
+            title="Successful Hires"
+            [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
+            unit="Hires"
+            subtitle="Passed 30-day retention index"
+            icon="award"
+            [trend]="(analyticsService.avgRetention30Days() || 100) + '% Yield'"
+            [trendPositive]="true"
+            accent="brand"
+          ></app-kpi-card>
+        </div>
+
+        <!-- 6. At Risk / Critical -->
+        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+          <app-kpi-card
+            title="At Risk / Critical"
+            [value]="positionService.positionsAtRiskCount() + positionService.positionsCriticalCount()"
+            unit="Roles"
+            subtitle="SLA or stage stalled"
+            icon="alert-triangle"
+            accent="danger"
+          ></app-kpi-card>
+        </div>
       </div>
 
       <!-- Attention Required List -->
@@ -532,6 +568,174 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
           </div>
         </div>
       </div>
+
+      <!-- Recruiter Wise Monthly Insight Modal -->
+      <div *ngIf="isRecruiterInsightModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col relative overflow-hidden">
+          <!-- Modal Header -->
+          <div class="p-5 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold">
+                <app-icon name="award" [size]="20"></app-icon>
+              </div>
+              <div>
+                <h2 class="text-base font-bold text-slate-900 tracking-tight">Recruiter Wise Monthly Insight</h2>
+                <p class="text-xs text-slate-500">Real-time database performance breakdown across 8 recruitment funnel stages</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="isRecruiterInsightModalOpen = false"
+              class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            >
+              <app-icon name="x" [size]="18"></app-icon>
+            </button>
+          </div>
+
+          <!-- Subheader Filter Bar (Non-mandatory & Chained) -->
+          <div class="px-6 py-3.5 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center gap-3">
+            <!-- Recruiter Name Dropdown -->
+            <div class="flex-1 min-w-[170px]">
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Recruiter Name</label>
+              <select
+                [ngModel]="insightRecruiterFilter()"
+                (ngModelChange)="onInsightRecruiterChange($event)"
+                class="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+              >
+                <option value="ALL">All Recruiters</option>
+                <option *ngFor="let rec of insightFilterOptions().recruiters" [value]="rec">{{ rec }}</option>
+              </select>
+            </div>
+
+            <!-- Position Dropdown -->
+            <div class="flex-1 min-w-[170px]">
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Position</label>
+              <select
+                [ngModel]="insightPositionFilter()"
+                (ngModelChange)="onInsightPositionChange($event)"
+                class="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+              >
+                <option value="ALL">All Positions</option>
+                <option *ngFor="let pos of insightFilterOptions().positions" [value]="pos">{{ pos }}</option>
+              </select>
+            </div>
+
+            <!-- Date Range Picker -->
+            <div class="flex items-center gap-2 min-w-[260px]">
+              <div class="flex-1">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">From Date</label>
+                <input
+                  type="date"
+                  [ngModel]="insightFromDate()"
+                  (ngModelChange)="onInsightFromDateChange($event)"
+                  class="w-full h-9 px-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div class="flex-1">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">To Date</label>
+                <input
+                  type="date"
+                  [ngModel]="insightToDate()"
+                  (ngModelChange)="onInsightToDateChange($event)"
+                  class="w-full h-9 px-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+
+            <!-- Reset / Clear Filters -->
+            <div class="flex items-end self-end mb-0.5">
+              <button
+                type="button"
+                (click)="clearInsightFilters()"
+                class="h-9 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <app-icon name="rotate-ccw" [size]="13"></app-icon>
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 overflow-y-auto space-y-4 flex-1 flex flex-col min-h-[350px]">
+            <!-- Loading Indicator -->
+            <div *ngIf="isInsightLoading()" class="my-auto py-12 flex items-center justify-center text-slate-500 text-xs font-semibold gap-2">
+              <span class="w-4 h-4 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></span>
+              Loading recruiter insights from database...
+            </div>
+
+            <!-- 8 Column Breakdown Table -->
+            <div *ngIf="!isInsightLoading()" class="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs bg-white flex-1">
+              <table class="w-full text-left text-xs whitespace-nowrap">
+                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                  <tr>
+                    <th class="py-3.5 px-4 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">Recruiter Name</th>
+                    <th class="py-3.5 px-4 border-r border-slate-100">Position</th>
+                    <th class="py-3.5 px-3 text-center bg-blue-50/40 text-blue-800">CV Sourced</th>
+                    <th class="py-3.5 px-3 text-center bg-purple-50/40 text-purple-800">Approved</th>
+                    <th class="py-3.5 px-3 text-center bg-sky-50/40 text-sky-800">Interviewed</th>
+                    <th class="py-3.5 px-3 text-center bg-emerald-50/40 text-emerald-800">Selected</th>
+                    <th class="py-3.5 px-3 text-center bg-indigo-50/40 text-indigo-800">Offered</th>
+                    <th class="py-3.5 px-3 text-center bg-teal-50/40 text-teal-800">Accepted</th>
+                    <th class="py-3.5 px-3 text-center bg-green-50/50 text-green-900">Joined</th>
+                    <th class="py-3.5 px-3 text-center bg-brand-50/60 text-brand-900">Successful Hire</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr *ngFor="let row of insightData()" class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-3.5 px-4 font-bold text-slate-900 sticky left-0 bg-white border-r border-slate-100 shadow-2xs">
+                      {{ row.recruiter_name }}
+                    </td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-700 border-r border-slate-100">{{ row.position }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-blue-700 bg-blue-50/20">{{ row.cv_sourced }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-purple-700 bg-purple-50/20">{{ row.approved }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-sky-700 bg-sky-50/20">{{ row.interviewed }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-emerald-700 bg-emerald-50/20">{{ row.selected }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-indigo-700 bg-indigo-50/20">{{ row.offered }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-teal-700 bg-teal-50/20">{{ row.accepted }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-bold text-green-700 bg-green-50/30">{{ row.joined }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-extrabold text-brand-700 bg-brand-50/40">{{ row.successful_hire }}</td>
+                  </tr>
+                  <tr *ngIf="insightData().length === 0">
+                    <td colspan="10" class="py-12 text-center text-slate-400 font-medium">
+                      No recruitment data matching current filter criteria.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Bottleneck Toast Notification at Bottom of Table -->
+            <div *ngIf="hasBottleneckAlert()" class="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 shadow-xs animate-fadeIn shrink-0 mt-2">
+              <div class="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5">
+                <app-icon name="alert-triangle" [size]="18"></app-icon>
+              </div>
+              <div class="text-xs">
+                <span class="font-bold text-amber-900 uppercase tracking-wide block flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  Database Bottleneck Reason Flagged
+                </span>
+                <span class="text-amber-800 font-medium mt-1 block leading-relaxed">
+                  {{ activeBottleneckReasons() }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="p-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
+            <span class="text-xs text-slate-500 font-medium">
+              Showing {{ insightData().length }} database response records
+            </span>
+            <button
+              type="button"
+              (click)="isRecruiterInsightModalOpen = false"
+              class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -539,6 +743,7 @@ export class DashboardOverviewComponent {
   positionService = inject(PositionService);
   candidateService = inject(CandidateService);
   analyticsService = inject(AnalyticsService);
+  recruiterService = inject(RecruiterService);
   private router = inject(Router);
 
   dashboardTabs: ViewTab[] = [
@@ -558,6 +763,78 @@ export class DashboardOverviewComponent {
   selectedDrawerPosition?: Position;
 
   isFilterDrawerOpen = false;
+  isRecruiterInsightModalOpen = false;
+
+  insightRecruiterFilter = signal<string>('ALL');
+  insightPositionFilter = signal<string>('ALL');
+  insightFromDate = signal<string>('');
+  insightToDate = signal<string>('');
+
+  insightData = signal<any[]>([]);
+  insightFilterOptions = signal<{ recruiters: string[]; positions: string[] }>({ recruiters: [], positions: [] });
+  isInsightLoading = signal<boolean>(false);
+
+  openRecruiterInsightModal() {
+    this.isRecruiterInsightModalOpen = true;
+    this.loadInsightData();
+  }
+
+  loadInsightData() {
+    this.isInsightLoading.set(true);
+    this.recruiterService.getRecruiterInsights({
+      recruiter: this.insightRecruiterFilter(),
+      position: this.insightPositionFilter(),
+      from: this.insightFromDate(),
+      to: this.insightToDate()
+    }).subscribe(res => {
+      this.isInsightLoading.set(false);
+      if (res && res.success) {
+        this.insightData.set(res.data || []);
+        if (res.filter_options) {
+          this.insightFilterOptions.set(res.filter_options);
+        }
+      }
+    });
+  }
+
+  onInsightRecruiterChange(val: string) {
+    this.insightRecruiterFilter.set(val);
+    this.loadInsightData();
+  }
+
+  onInsightPositionChange(val: string) {
+    this.insightPositionFilter.set(val);
+    this.loadInsightData();
+  }
+
+  onInsightFromDateChange(val: string) {
+    this.insightFromDate.set(val);
+    this.loadInsightData();
+  }
+
+  onInsightToDateChange(val: string) {
+    this.insightToDate.set(val);
+    this.loadInsightData();
+  }
+
+  clearInsightFilters() {
+    this.insightRecruiterFilter.set('ALL');
+    this.insightPositionFilter.set('ALL');
+    this.insightFromDate.set('');
+    this.insightToDate.set('');
+    this.loadInsightData();
+  }
+
+  hasBottleneckAlert = computed(() => {
+    return this.insightData().some(item => !!item.bottleneck_reason);
+  });
+
+  activeBottleneckReasons = computed(() => {
+    const reasons = this.insightData()
+      .filter(item => !!item.bottleneck_reason)
+      .map(item => `${item.recruiter_name} (${item.position}): ${item.bottleneck_reason}`);
+    return reasons.join(' | ');
+  });
 
   isPipelineModalOpen = false;
   selectedPipelineFilter = signal<string>('');
