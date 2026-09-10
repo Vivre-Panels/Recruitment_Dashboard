@@ -108,6 +108,7 @@ export class RecruiterService {
     if (filters.from) params.from = filters.from;
     if (filters.to) params.to = filters.to;
 
+    // Try primary API endpoint first
     return this.http.get<{
       success: boolean;
       data: RecruiterInsightItem[];
@@ -117,106 +118,147 @@ export class RecruiterService {
         if (res && res.success && res.data && res.data.length > 0) {
           return res;
         }
-        return this.getFallbackInsights(filters);
+        throw new Error('Primary insights endpoint returned no data');
       }),
-      catchError(err => {
-        console.warn('Recruiter insights API error, using fallback state:', err);
-        return of(this.getFallbackInsights(filters));
+      catchError(() => {
+        // Try local backend server if primary failed
+        return this.http.get<{
+          success: boolean;
+          data: RecruiterInsightItem[];
+          filter_options: { recruiters: string[]; positions: string[] };
+        }>(`http://localhost:8080/recruit_api/recruiter-insights`, { params }).pipe(
+          map(res => {
+            if (res && res.success && res.data && res.data.length > 0) {
+              return res;
+            }
+            throw new Error('Local insights endpoint returned no data');
+          }),
+          catchError(() => {
+            // Aggregate directly from real live /applications DB endpoint
+            return this.aggregateFromLiveApplications(filters);
+          })
+        );
       })
     );
   }
 
-  private getFallbackInsights(filters: { recruiter?: string; position?: string; from?: string; to?: string }): {
+  private aggregateFromLiveApplications(filters: { recruiter?: string; position?: string; from?: string; to?: string }): Observable<{
     success: boolean;
     data: RecruiterInsightItem[];
     filter_options: { recruiters: string[]; positions: string[] };
-  } {
-    const defaultData: RecruiterInsightItem[] = [
-      {
-        recruiter_name: 'Banashree',
-        position: 'ASM',
-        cv_sourced: 18,
-        approved: 12,
-        interviewed: 8,
-        selected: 5,
-        offered: 4,
-        accepted: 3,
-        joined: 3,
-        successful_hire: 3,
-        bottleneck_reason: 'SLA Delay in Hiring Manager Feedback (Pending since 4 days)'
-      },
-      {
-        recruiter_name: 'Banashree',
-        position: 'Senior Go Developer',
-        cv_sourced: 14,
-        approved: 10,
-        interviewed: 6,
-        selected: 4,
-        offered: 3,
-        accepted: 2,
-        joined: 2,
-        successful_hire: 2
-      },
-      {
-        recruiter_name: 'Rahul Sharma',
-        position: 'Frontend Tech Lead',
-        cv_sourced: 22,
-        approved: 15,
-        interviewed: 11,
-        selected: 7,
-        offered: 5,
-        accepted: 4,
-        joined: 4,
-        successful_hire: 4,
-        bottleneck_reason: 'Budget Approval Pending from Finance'
-      },
-      {
-        recruiter_name: 'Priya Patel',
-        position: 'Product Operations Manager',
-        cv_sourced: 16,
-        approved: 11,
-        interviewed: 7,
-        selected: 4,
-        offered: 3,
-        accepted: 3,
-        joined: 2,
-        successful_hire: 2
-      },
-      {
-        recruiter_name: 'Amit Verma',
-        position: 'QA Automation Engineer',
-        cv_sourced: 12,
-        approved: 8,
-        interviewed: 5,
-        selected: 3,
-        offered: 2,
-        accepted: 2,
-        joined: 2,
-        successful_hire: 2
-      }
-    ];
+  }> {
+    // Official active recruiters from dbo.recruiters table
+    const OFFICIAL_RECRUITERS = ['Banashree Roy', 'Meghna Deb Sarkar', 'Poushali Das', 'Priya Saha'];
 
-    let filtered = defaultData;
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/applications`).pipe(
+      map(res => {
+        const apps = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+        const allPositionsSet = new Set<string>();
 
-    if (filters.recruiter && filters.recruiter !== 'ALL') {
-      filtered = filtered.filter(item =>
-        item.recruiter_name.toLowerCase().includes(filters.recruiter!.toLowerCase())
-      );
-    }
+        // Map to group by "RecruiterName|Position"
+        const grouped = new Map<string, RecruiterInsightItem>();
 
-    if (filters.position && filters.position !== 'ALL') {
-      filtered = filtered.filter(item =>
-        item.position.toLowerCase().includes(filters.position!.toLowerCase())
-      );
-    }
+        apps.forEach(app => {
+          const rawRec = (app.Recruiter_Name || '').trim();
+          
+          // Match against official recruiters list only
+          const matchedRec = OFFICIAL_RECRUITERS.find(r => 
+            r.toLowerCase() === rawRec.toLowerCase() ||
+            rawRec.toLowerCase().includes(r.toLowerCase().split(' ')[0]) ||
+            r.toLowerCase().includes(rawRec.toLowerCase().split(' ')[0])
+          );
 
-    const recruiters = Array.from(new Set(defaultData.map(d => d.recruiter_name))).sort();
-    const positions = Array.from(new Set(defaultData.map(d => d.position))).sort();
+          // Ignore records not belonging to an official recruiter (e.g. former employees or parser artifacts)
+          if (!matchedRec) return;
 
-    return {
-      success: true,
-      data: filtered,
-      filter_options: { recruiters, positions }
-    };
+          const recName = matchedRec;
+          const posTitle = (app.Posting_Title || 'General').trim();
+
+          if (posTitle && posTitle !== 'General') allPositionsSet.add(posTitle);
+
+          // Apply chained filters
+          if (filters.recruiter && filters.recruiter !== 'ALL') {
+            if (!recName.toLowerCase().includes(filters.recruiter.toLowerCase())) return;
+          }
+          if (filters.position && filters.position !== 'ALL') {
+            if (!posTitle.toLowerCase().includes(filters.position.toLowerCase())) return;
+          }
+          if (filters.from && app.Application_Created_Time) {
+            if (new Date(app.Application_Created_Time) < new Date(filters.from)) return;
+          }
+          if (filters.to && app.Application_Created_Time) {
+            const toDate = new Date(filters.to);
+            toDate.setDate(toDate.getDate() + 1);
+            if (new Date(app.Application_Created_Time) > toDate) return;
+          }
+
+          const key = `${recName}|${posTitle}`;
+          if (!grouped.has(key)) {
+            grouped.set(key, {
+              recruiter_name: recName,
+              position: posTitle,
+              cv_sourced: 0,
+              approved: 0,
+              interviewed: 0,
+              selected: 0,
+              offered: 0,
+              accepted: 0,
+              joined: 0,
+              successful_hire: 0
+            });
+          }
+
+          const item = grouped.get(key)!;
+          const status = (app.Application_Status || '').toLowerCase();
+
+          item.cv_sourced++;
+
+          if (status.includes('approve') || status.includes('shortlist') || status.includes('qualified')) {
+            item.approved++;
+          }
+          if (app.Manager_Round_Completed_Time || app.Manager_Interview_DateTime || status.includes('interview') || status.includes('round') || status.includes('test')) {
+            item.interviewed++;
+          }
+          if (status.includes('select') || status.includes('cleared') || status.includes('completed')) {
+            item.selected++;
+          }
+          if (app.Offer_Accepted_DateTime || status.includes('offer') || status.includes('loi')) {
+            item.offered++;
+          }
+          if (app.Offer_Accepted_DateTime || status.includes('accept') || status.includes('hired')) {
+            item.accepted++;
+          }
+          if (status === 'joined' || status.includes('onboard')) {
+            item.joined++;
+          }
+          if (status === 'joined' || status.includes('hired')) {
+            item.successful_hire++;
+          }
+        });
+
+        const dataList = Array.from(grouped.values()).sort((a, b) =>
+          a.recruiter_name.localeCompare(b.recruiter_name) || a.position.localeCompare(b.position)
+        );
+
+        return {
+          success: true,
+          data: dataList,
+          filter_options: {
+            recruiters: OFFICIAL_RECRUITERS.slice().sort(),
+            positions: Array.from(allPositionsSet).sort()
+          }
+        };
+      }),
+      catchError(err => {
+        console.error('Failed to aggregate from live applications DB:', err);
+        return of({
+          success: true,
+          data: [],
+          filter_options: { recruiters: OFFICIAL_RECRUITERS.slice().sort(), positions: [] }
+        });
+      })
+    );
   }
 }
+
+

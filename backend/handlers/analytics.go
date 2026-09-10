@@ -854,12 +854,9 @@ func GetRecruiterInsights(c *gin.Context) {
 
 	var recruiters []string
 	_ = database.DB.Select(&recruiters, `
-		SELECT DISTINCT [Recruiter_Name] 
-		FROM (
-			SELECT [Recruiter_Name] FROM [dbo].[application_pipeline] WHERE [Recruiter_Name] IS NOT NULL AND [Recruiter_Name] != ''
-			UNION
-			SELECT [Recruiter_Name] FROM [dbo].[requisition] WHERE [Recruiter_Name] IS NOT NULL AND [Recruiter_Name] != ''
-		) x ORDER BY [Recruiter_Name]`)
+		SELECT [recruiter_name] 
+		FROM [dbo].[recruiters] 
+		ORDER BY [recruiter_name]`)
 	if recruiters == nil {
 		recruiters = []string{}
 	}
