@@ -663,13 +663,16 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
               Loading recruiter insights from database...
             </div>
 
-            <!-- 8 Column Breakdown Table -->
+            <!-- Recruiter insight breakdown table -->
             <div *ngIf="!isInsightLoading()" class="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs bg-white flex-1">
               <table class="w-full text-left text-xs whitespace-nowrap">
                 <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
                   <tr>
                     <th class="py-3.5 px-4 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">Recruiter Name</th>
+                    <th class="py-3.5 px-4 border-r border-slate-100">Department</th>
                     <th class="py-3.5 px-4 border-r border-slate-100">Position</th>
+                    <th class="py-3.5 px-4 border-r border-slate-100">Open Date</th>
+                    <th class="py-3.5 px-4 border-r border-slate-100">Target Date</th>
                     <th class="py-3.5 px-3 text-center bg-blue-50/40 text-blue-800">CV Sourced</th>
                     <th class="py-3.5 px-3 text-center bg-purple-50/40 text-purple-800">Approved</th>
                     <th class="py-3.5 px-3 text-center bg-sky-50/40 text-sky-800">Interviewed</th>
@@ -677,7 +680,8 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
                     <th class="py-3.5 px-3 text-center bg-indigo-50/40 text-indigo-800">Offered</th>
                     <th class="py-3.5 px-3 text-center bg-teal-50/40 text-teal-800">Accepted</th>
                     <th class="py-3.5 px-3 text-center bg-green-50/50 text-green-900">Joined</th>
-                    <th class="py-3.5 px-3 text-center bg-brand-50/60 text-brand-900">Successful Hire</th>
+                    <th class="py-3.5 px-3 text-center bg-amber-50/60 text-amber-900">15 Days Retention</th>
+                    <th class="py-3.5 px-3 text-center bg-brand-50/60 text-brand-900">30 Days Retention</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -685,7 +689,10 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
                     <td class="py-3.5 px-4 font-bold text-slate-900 sticky left-0 bg-white border-r border-slate-100 shadow-2xs">
                       {{ row.recruiter_name }}
                     </td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-700 border-r border-slate-100">{{ row.department || '-' }}</td>
                     <td class="py-3.5 px-4 font-semibold text-slate-700 border-r border-slate-100">{{ row.position }}</td>
+                    <td class="py-3.5 px-4 font-mono text-slate-600 border-r border-slate-100">{{ row.open_date || '-' }}</td>
+                    <td class="py-3.5 px-4 font-mono text-slate-600 border-r border-slate-100">{{ row.target_date || '-' }}</td>
                     <td class="py-3.5 px-3 text-center font-mono font-bold text-blue-700 bg-blue-50/20">{{ row.cv_sourced }}</td>
                     <td class="py-3.5 px-3 text-center font-mono font-bold text-purple-700 bg-purple-50/20">{{ row.approved }}</td>
                     <td class="py-3.5 px-3 text-center font-mono font-bold text-sky-700 bg-sky-50/20">{{ row.interviewed }}</td>
@@ -693,10 +700,11 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
                     <td class="py-3.5 px-3 text-center font-mono font-bold text-indigo-700 bg-indigo-50/20">{{ row.offered }}</td>
                     <td class="py-3.5 px-3 text-center font-mono font-bold text-teal-700 bg-teal-50/20">{{ row.accepted }}</td>
                     <td class="py-3.5 px-3 text-center font-mono font-bold text-green-700 bg-green-50/30">{{ row.joined }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-extrabold text-brand-700 bg-brand-50/40">{{ row.successful_hire }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-extrabold text-amber-700 bg-amber-50/40">{{ row.retention_15d ?? '-' }}</td>
+                    <td class="py-3.5 px-3 text-center font-mono font-extrabold text-brand-700 bg-brand-50/40">{{ row.retention_30d ?? '-' }}</td>
                   </tr>
                   <tr *ngIf="insightData().length === 0">
-                    <td colspan="10" class="py-12 text-center text-slate-400 font-medium">
+                    <td colspan="14" class="py-12 text-center text-slate-400 font-medium">
                       No recruitment data matching current filter criteria.
                     </td>
                   </tr>

@@ -134,7 +134,10 @@ export interface Recruiter {
 
 export interface RecruiterInsightItem {
   recruiter_name: string;
+  department?: string;
   position: string;
+  open_date?: string;
+  target_date?: string;
   cv_sourced: number;
   approved: number;
   interviewed: number;
@@ -143,6 +146,8 @@ export interface RecruiterInsightItem {
   accepted: number;
   joined: number;
   successful_hire: number;
+  retention_15d?: number | string;
+  retention_30d?: number | string;
   bottleneck_reason?: string;
 }
 
