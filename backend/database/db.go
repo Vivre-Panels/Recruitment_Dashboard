@@ -200,13 +200,40 @@ func RunMigrations() {
 		}
 	}
 
+	// Follow Up table
+	query = `
+    IF NOT EXISTS (
+        SELECT *
+        FROM sys.objects
+        WHERE object_id = OBJECT_ID(N'[dbo].[follow_up]')
+          AND type IN (N'U')
+    )
+    BEGIN
+        CREATE TABLE [dbo].[follow_up] (
+            [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+            [Application_ID] NVARCHAR(255) NULL,
+            [FollowUp_Time] DATETIME2 NULL,
+            [FollowUp_Status] BIT NOT NULL DEFAULT 0,
+            [FollowUp_Remarks] NVARCHAR(MAX) NULL,
+            [FollowUp_By] NVARCHAR(255) NULL,
+            [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+            [UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        )
+    END
+`
+
+	_, err = DB.Exec(query)
+	if err != nil {
+		log.Fatalf("Failed to create follow_up table: %v", err)
+	}
+
 	reqColumns := map[string]string{
 		"Team":                 "NVARCHAR(255) NULL",
 		"Hiring_Manager":       "NVARCHAR(255) NULL",
 		"Priority":             "NVARCHAR(10) NULL",
 		"Salary_Range":         "NVARCHAR(255) NULL",
 		"Location":             "NVARCHAR(255) NULL",
-		"Experience_Required":   "NVARCHAR(255) NULL",
+		"Experience_Required":  "NVARCHAR(255) NULL",
 		"Preferred_Industries": "NVARCHAR(MAX) NULL",
 		"Must_Haves":           "NVARCHAR(MAX) NULL",
 		"Knockout_Criteria":    "NVARCHAR(MAX) NULL",

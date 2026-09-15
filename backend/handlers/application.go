@@ -113,6 +113,61 @@ func CreateApplication(c *gin.Context) {
 		return
 	}
 
+	for _, followUp := range app.FollowUp {
+		var followUpTime interface{}
+
+		if followUp.FollowUpTime != nil && *followUp.FollowUpTime != "" {
+			parsedTime, parseErr := time.Parse(
+				"02-Jan-2006 15:04:05",
+				*followUp.FollowUpTime,
+			)
+			if parseErr != nil {
+				log.Printf("Invalid FollowUp_Time: %v", parseErr)
+				c.JSON(http.StatusBadRequest, gin.H{
+					"success": false,
+					"message": "Invalid FollowUp_Time format",
+					"error":   parseErr.Error(),
+				})
+				return
+			}
+
+			followUpTime = parsedTime
+		}
+
+		followUpStatus := false
+		if followUp.FollowUpStatus != nil {
+			followUpStatus = *followUp.FollowUpStatus
+		}
+
+		_, err := database.DB.Exec(`
+        INSERT INTO [dbo].[follow_up]
+        (
+            [Application_ID],
+            [FollowUp_Time],
+            [FollowUp_Status],
+            [FollowUp_Remarks],
+            [FollowUp_By]
+        )
+        VALUES (@p1, @p2, @p3, @p4, @p5)
+    `,
+			app.ApplicationID,
+			followUpTime,
+			followUpStatus,
+			followUp.FollowUpRemarks,
+			followUp.FollowUpBy,
+		)
+
+		if err != nil {
+			log.Printf("Failed to save follow-up: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Application saved but follow-up could not be saved",
+				"error":   err.Error(),
+			})
+			return
+		}
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Application saved successfully",
@@ -287,12 +342,12 @@ func GetSummary(c *gin.Context) {
 	}
 
 	type Summary struct {
-		TotalRequisitions    int `json:"total_requisitions"`
-		OpenRequisitions     int `json:"open_requisitions"`
-		TotalApplications    int `json:"total_applications"`
-		TotalCandidates      int `json:"total_candidates"`
-		AvgCVScore           float64 `json:"avg_cv_score"`
-		AvgCallAuditScore    float64 `json:"avg_call_audit_score"`
+		TotalRequisitions int     `json:"total_requisitions"`
+		OpenRequisitions  int     `json:"open_requisitions"`
+		TotalApplications int     `json:"total_applications"`
+		TotalCandidates   int     `json:"total_candidates"`
+		AvgCVScore        float64 `json:"avg_cv_score"`
+		AvgCallAuditScore float64 `json:"avg_call_audit_score"`
 	}
 
 	var summary Summary
