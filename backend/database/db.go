@@ -266,6 +266,7 @@ func RunMigrations() {
 		"Replacement_Required":     "BIT NULL DEFAULT 0",
 		"In_Talent_Bank":           "BIT NULL DEFAULT 0",
 		"Candidate_Attributes":     "NVARCHAR(MAX) NULL",
+		"External_Position":        "NVARCHAR(500) NULL",
 	}
 	for col, colType := range appColumns {
 		alterQuery := fmt.Sprintf(`

@@ -51,26 +51,27 @@ func CreateApplication(c *gin.Context) {
 				[Job_Opening_ID] = @p9,
 				[Mobile] = @p10,
 				[Posting_Title] = @p11,
-				[Recruiter_Name] = @p12,
-				[Source] = @p13,
-				[Profile_Summary] = @p14,
-				[Tellecalling_Feedback] = @p15,
-				[TelleCalling_Time] = @p16,
-				[Tellecalling_Status] = @p17,
-				[Offer_Accepted_DateTime] = @p18,
-				[Manager_Interview_DateTime] = @p19,
-				[Manager_Round_Schedule_DateTime] = @p20,
-				[Manager_Round_Completed_Time] = @p21,
+				[External_Position] = @p12,
+				[Recruiter_Name] = @p13,
+				[Source] = @p14,
+				[Profile_Summary] = @p15,
+				[Tellecalling_Feedback] = @p16,
+				[TelleCalling_Time] = @p17,
+				[Tellecalling_Status] = @p18,
+				[Offer_Accepted_DateTime] = @p19,
+				[Manager_Interview_DateTime] = @p20,
+				[Manager_Round_Schedule_DateTime] = @p21,
+				[Manager_Round_Completed_Time] = @p22,
 				[UpdatedAt] = GETUTCDATE()
 		WHEN NOT MATCHED THEN
 			INSERT ([Application_ID], [Application_Created_Time], [Application_Status],
 				[Call_Audit_Score], [Call_Priority], [Candidate_Name], [CV_Link],
-				[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [Recruiter_Name],
+				[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [External_Position], [Recruiter_Name],
 				[Source], [Profile_Summary], [Tellecalling_Feedback],
 				[TelleCalling_Time], [Tellecalling_Status], [Offer_Accepted_DateTime],
 				[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time])
 			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15,
-				@p16, @p17, @p18, @p19, @p20, @p21)
+				@p16, @p17, @p18, @p19, @p20, @p21, @p22)
 		OUTPUT INSERTED.[Id];`
 
 	auditScore := parseFloat(app.CallAuditScore)
@@ -91,6 +92,7 @@ func CreateApplication(c *gin.Context) {
 		jobOpeningID,
 		app.Mobile,
 		app.PostingTitle,
+		app.ExternalPosition,
 		app.RecruiterName,
 		app.Source,
 		app.ProfileSummary,
@@ -264,6 +266,7 @@ func GetApplications(c *gin.Context) {
 	query := fmt.Sprintf(`SELECT a.[Id], a.[Application_ID], a.[Application_Created_Time], a.[Application_Status],
 		a.[Call_Audit_Score], a.[Call_Priority], a.[Candidate_Name], a.[CV_Link],
 		a.[CV_Score], a.[Job_Opening_ID], a.[Mobile], a.[Posting_Title],
+		a.[External_Position],
 		ISNULL(r.[Department], 
 			CASE 
 				WHEN LOWER(a.[Posting_Title]) LIKE '%%sales%%' OR LOWER(a.[Posting_Title]) LIKE '%%asm%%' THEN 'Sales & BD'
