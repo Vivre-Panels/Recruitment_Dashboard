@@ -98,16 +98,16 @@ func GetOverviewKPIs(c *gin.Context) {
 	appWhere, appArgs := buildFilterWhere(c, "a")
 
 	type KPIResponse struct {
-		OpenRequisitions             int     `json:"open_requisitions"`
-		TotalRequiredHC              int     `json:"total_required_hc"`
-		TotalHiresJoined             int     `json:"total_hires_joined"`
-		SLAComplianceRatePercentage  float64 `json:"sla_compliance_rate_percentage"`
-		RetentionRate7dPercentage    float64 `json:"retention_rate_7d_percentage"`
-		RetentionRate30dPercentage   float64 `json:"retention_rate_30d_percentage"`
-		Active30dFailures            int     `json:"active_30d_failures"`
-		ReplacementTicketsCount      int     `json:"replacement_tickets_count"`
-		ActiveBottlenecksCount       int     `json:"active_bottlenecks_count"`
-		OverallCompositeScore        float64 `json:"overall_composite_score"`
+		OpenRequisitions            int     `json:"open_requisitions"`
+		TotalRequiredHC             int     `json:"total_required_hc"`
+		TotalHiresJoined            int     `json:"total_hires_joined"`
+		SLAComplianceRatePercentage float64 `json:"sla_compliance_rate_percentage"`
+		RetentionRate7dPercentage   float64 `json:"retention_rate_7d_percentage"`
+		RetentionRate30dPercentage  float64 `json:"retention_rate_30d_percentage"`
+		Active30dFailures           int     `json:"active_30d_failures"`
+		ReplacementTicketsCount     int     `json:"replacement_tickets_count"`
+		ActiveBottlenecksCount      int     `json:"active_bottlenecks_count"`
+		OverallCompositeScore       float64 `json:"overall_composite_score"`
 	}
 
 	var res KPIResponse
@@ -120,7 +120,7 @@ func GetOverviewKPIs(c *gin.Context) {
 			COUNT(CASE WHEN r.[Bottleneck_Type] IS NOT NULL AND r.[Bottleneck_Type] != '' THEN 1 END) AS active_bottlenecks
 		FROM [dbo].[requisition] r
 		WHERE %s`, reqWhere)
-	
+
 	_ = database.DB.QueryRow(queryReq, reqArgs...).Scan(&res.OpenRequisitions, &res.TotalRequiredHC, &res.ActiveBottlenecksCount)
 
 	// Single Combined Query for Applications Pipeline
@@ -527,8 +527,8 @@ func GetScorecard(c *gin.Context) {
 	type ScorecardItem struct {
 		RecruiterName             string  `json:"recruiter_name"`
 		HiresVsTargetScore        float64 `json:"hires_vs_target_score"`        // 50%
-		DeadlineComplianceScore    float64 `json:"deadline_compliance_score"`    // 20%
-		QualityConversionScore    float64 `json:"quality_conversion_score"`    // 20%
+		DeadlineComplianceScore   float64 `json:"deadline_compliance_score"`    // 20%
+		QualityConversionScore    float64 `json:"quality_conversion_score"`     // 20%
 		ProcessDisciplineSLAScore float64 `json:"process_discipline_sla_score"` // 10%
 		WeightedTotalScore        float64 `json:"weighted_total_score"`
 	}
@@ -564,7 +564,7 @@ func GetScorecard(c *gin.Context) {
 		items = append(items, ScorecardItem{
 			RecruiterName:             name,
 			HiresVsTargetScore:        hiresScore,
-			DeadlineComplianceScore:    deadlineScore,
+			DeadlineComplianceScore:   deadlineScore,
 			QualityConversionScore:    qualityScore,
 			ProcessDisciplineSLAScore: slaScore,
 			WeightedTotalScore:        weighted,
@@ -647,6 +647,13 @@ func GetTalentBank(c *gin.Context) {
 	}
 
 	whereStmt := strings.Join(whereClauses, " AND ")
+	whereStmt += ` AND EXISTS (
+		SELECT 1
+		FROM [dbo].[recruiters] ar
+		WHERE LOWER(LTRIM(RTRIM(ar.[recruiter_name]))) = LOWER(LTRIM(RTRIM(
+			ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name])
+		)))
+	)`
 	query := fmt.Sprintf(`
 		SELECT TOP 100
 			a.[Id], ISNULL(a.[Application_ID], '') AS Application_ID,
@@ -855,7 +862,8 @@ func GetRecruiterInsights(c *gin.Context) {
 	var recruiters []string
 	_ = database.DB.Select(&recruiters, `
 		SELECT [recruiter_name] 
-		FROM [dbo].[recruiters] 
+		FROM [dbo].[recruiters]
+		WHERE NULLIF(LTRIM(RTRIM([recruiter_name])), '') IS NOT NULL
 		ORDER BY [recruiter_name]`)
 	if recruiters == nil {
 		recruiters = []string{}
