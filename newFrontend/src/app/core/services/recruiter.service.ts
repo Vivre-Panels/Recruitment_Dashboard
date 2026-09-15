@@ -115,7 +115,14 @@ export class RecruiterService {
       filter_options: { recruiters: string[]; positions: string[] };
     }>(`${this.apiUrl}/recruiter-insights`, { params }).pipe(
       map(res => {
-        if (res && res.success && res.data && res.data.length > 0) {
+        const hasExpectedRecruiter = !filters.recruiter || filters.recruiter === 'ALL' ||
+          (res.data || []).every(row => row.recruiter_name.toLowerCase() === filters.recruiter!.toLowerCase());
+        const hasExpectedPosition = !filters.position || filters.position === 'ALL' ||
+          (res.data || []).every(row => row.position.toLowerCase().includes(filters.position!.toLowerCase()));
+
+        // Grouped insight rows do not contain their source dates, so date-filtered
+        // requests must use the application-level aggregation below.
+        if (!filters.from && !filters.to && res && res.success && res.data && res.data.length > 0 && hasExpectedRecruiter && hasExpectedPosition) {
           return res;
         }
         throw new Error('Primary insights endpoint returned no data');
@@ -187,11 +194,13 @@ export class RecruiterService {
           if (filters.from && app.Application_Created_Time) {
             if (new Date(app.Application_Created_Time) < new Date(filters.from)) return;
           }
+          if (filters.from && !app.Application_Created_Time) return;
           if (filters.to && app.Application_Created_Time) {
             const toDate = new Date(filters.to);
             toDate.setDate(toDate.getDate() + 1);
-            if (new Date(app.Application_Created_Time) > toDate) return;
+            if (new Date(app.Application_Created_Time) >= toDate) return;
           }
+          if (filters.to && !app.Application_Created_Time) return;
 
           const key = `${recName}|${posTitle}`;
           if (!grouped.has(key)) {
