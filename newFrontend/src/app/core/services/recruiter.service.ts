@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { Recruiter, RecruiterInsightItem } from '../models/recruitment.model';
 import { environment } from '../../../environments/environment';
@@ -147,12 +147,18 @@ export class RecruiterService {
     data: RecruiterInsightItem[];
     filter_options: { recruiters: string[]; positions: string[] };
   }> {
-    // Official active recruiters from dbo.recruiters table
-    const OFFICIAL_RECRUITERS = ['Banashree Roy', 'Meghna Deb Sarkar', 'Poushali Das', 'Priya Saha'];
-
-    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/applications`).pipe(
-      map(res => {
+    return forkJoin({
+      applications: this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/applications`),
+      recruiters: this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/recruiters`)
+    }).pipe(
+      map(({ applications: res, recruiters: recruiterRes }) => {
         const apps = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+        const activeRecruiters = (recruiterRes && recruiterRes.success && Array.isArray(recruiterRes.data))
+          ? recruiterRes.data
+            .filter(recruiter => String(recruiter.status || '').toLowerCase() === 'active')
+            .map(recruiter => String(recruiter.recruiter_name || '').trim())
+            .filter(Boolean)
+          : [];
         const allPositionsSet = new Set<string>();
 
         // Map to group by "RecruiterName|Position"
@@ -161,12 +167,7 @@ export class RecruiterService {
         apps.forEach(app => {
           const rawRec = (app.Recruiter_Name || '').trim();
           
-          // Match against official recruiters list only
-          const matchedRec = OFFICIAL_RECRUITERS.find(r => 
-            r.toLowerCase() === rawRec.toLowerCase() ||
-            rawRec.toLowerCase().includes(r.toLowerCase().split(' ')[0]) ||
-            r.toLowerCase().includes(rawRec.toLowerCase().split(' ')[0])
-          );
+          const matchedRec = activeRecruiters.find(r => r.toLowerCase() === rawRec.toLowerCase());
 
           // Ignore records not belonging to an official recruiter (e.g. former employees or parser artifacts)
           if (!matchedRec) return;
@@ -244,7 +245,7 @@ export class RecruiterService {
           success: true,
           data: dataList,
           filter_options: {
-            recruiters: OFFICIAL_RECRUITERS.slice().sort(),
+            recruiters: activeRecruiters.slice().sort(),
             positions: Array.from(allPositionsSet).sort()
           }
         };
@@ -254,7 +255,7 @@ export class RecruiterService {
         return of({
           success: true,
           data: [],
-          filter_options: { recruiters: OFFICIAL_RECRUITERS.slice().sort(), positions: [] }
+          filter_options: { recruiters: [], positions: [] }
         });
       })
     );

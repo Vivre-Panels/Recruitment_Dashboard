@@ -744,34 +744,34 @@ func GetRecruiterInsights(c *gin.Context) {
 	argIdx := 1
 
 	if recruiterParam != "" && recruiterParam != "ALL" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(ISNULL(a.[Recruiter_Name], '') LIKE @p%d OR ISNULL(r.[Recruiter_Name], '') LIKE @p%d)", argIdx, argIdx+1))
-		args = append(args, "%"+recruiterParam+"%", "%"+recruiterParam+"%")
-		argIdx += 2
+		whereClauses = append(whereClauses, fmt.Sprintf("LOWER(LTRIM(RTRIM(ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name])))) = LOWER(LTRIM(RTRIM(@p%d)))", argIdx))
+		args = append(args, recruiterParam)
+		argIdx++
 	}
 
 	if positionParam != "" && positionParam != "ALL" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(ISNULL(a.[Posting_Title], '') LIKE @p%d OR ISNULL(r.[Job_Title], '') LIKE @p%d)", argIdx, argIdx+1))
-		args = append(args, "%"+positionParam+"%", "%"+positionParam+"%")
-		argIdx += 2
+		whereClauses = append(whereClauses, fmt.Sprintf("LOWER(LTRIM(RTRIM(ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title])))) LIKE LOWER(@p%d)", argIdx))
+		args = append(args, "%"+positionParam+"%")
+		argIdx++
 	}
 
 	if fromParam != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(a.[Application_Created_Time] >= @p%d OR r.[Opening_Date] >= @p%d)", argIdx, argIdx+1))
-		args = append(args, fromParam, fromParam)
-		argIdx += 2
+		whereClauses = append(whereClauses, fmt.Sprintf("a.[Application_Created_Time] >= @p%d", argIdx))
+		args = append(args, fromParam)
+		argIdx++
 	}
 
 	if toParam != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("(a.[Application_Created_Time] <= DATEADD(DAY, 1, @p%d) OR r.[Opening_Date] <= DATEADD(DAY, 1, @p%d))", argIdx, argIdx+1))
-		args = append(args, toParam, toParam)
-		argIdx += 2
+		whereClauses = append(whereClauses, fmt.Sprintf("a.[Application_Created_Time] < DATEADD(DAY, 1, @p%d)", argIdx))
+		args = append(args, toParam)
+		argIdx++
 	}
 
 	whereStmt := strings.Join(whereClauses, " AND ")
 
 	query := fmt.Sprintf(`
 		SELECT 
-			ISNULL(NULLIF(a.[Recruiter_Name], ''), ISNULL(r.[Recruiter_Name], 'Unassigned')) AS recruiter_name,
+			ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]) AS recruiter_name,
 			ISNULL(NULLIF(a.[Posting_Title], ''), ISNULL(r.[Job_Title], 'General')) AS position,
 			COUNT(1) AS cv_sourced,
 			COUNT(CASE WHEN LOWER(a.[Application_Status]) LIKE '%%approve%%' 
@@ -800,10 +800,13 @@ func GetRecruiterInsights(c *gin.Context) {
 			MAX(ISNULL(CONVERT(NVARCHAR(25), r.[Pending_Since], 120), '')) AS pending_since
 		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
 		LEFT JOIN [dbo].[requisition] r WITH (NOLOCK) ON a.[Job_Opening_ID] = r.[Job_Opening_ID]
+		INNER JOIN [dbo].[recruiters] ar WITH (NOLOCK)
+			ON LOWER(LTRIM(RTRIM(ar.[recruiter_name]))) = LOWER(LTRIM(RTRIM(ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]))))
+			AND LOWER(LTRIM(RTRIM(ar.[status]))) = 'active'
 		WHERE %s
 		GROUP BY 
-			ISNULL(NULLIF(a.[Recruiter_Name], ''), ISNULL(r.[Recruiter_Name], 'Unassigned')),
-			ISNULL(NULLIF(a.[Posting_Title], ''), ISNULL(r.[Job_Title], 'General'))
+			ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]),
+			ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title])
 		ORDER BY recruiter_name, position`, whereStmt)
 
 	rows, err := database.DB.Query(query, args...)
@@ -864,6 +867,7 @@ func GetRecruiterInsights(c *gin.Context) {
 		SELECT [recruiter_name] 
 		FROM [dbo].[recruiters]
 		WHERE NULLIF(LTRIM(RTRIM([recruiter_name])), '') IS NOT NULL
+		  AND LOWER(LTRIM(RTRIM([status]))) = 'active'
 		ORDER BY [recruiter_name]`)
 	if recruiters == nil {
 		recruiters = []string{}
