@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component';
 import { ToastContainerComponent } from '../../shared/components/toast/toast.component';
@@ -19,7 +18,6 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
-    SidebarComponent,
     HeaderComponent,
     BreadcrumbsComponent,
     ToastContainerComponent,
@@ -27,41 +25,17 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
     IconComponent
   ],
   template: `
-    <div class="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-900">
-      <!-- Sidebar -->
-      <app-sidebar 
-        [(isCollapsed)]="isSidebarCollapsed"
-        class="hidden md:flex sticky top-0 h-screen"
-      ></app-sidebar>
+    <div class="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      <!-- Topbar Header with Navs & Sub-Tabs -->
+      <app-header
+        (openCreatePosition)="isCreatePositionOpen = true"
+      ></app-header>
 
-      <!-- Mobile Sidebar Overlay Drawer -->
-      <div 
-        *ngIf="isMobileSidebarOpen"
-        class="md:hidden fixed inset-0 z-50 flex"
-      >
-        <div 
-          class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
-          (click)="isMobileSidebarOpen = false"
-        ></div>
-        <div class="relative flex-1 flex flex-col max-w-xs w-full bg-slate-900">
-          <app-sidebar [isCollapsed]="false" (linkClicked)="isMobileSidebarOpen = false"></app-sidebar>
-        </div>
-      </div>
-
-      <!-- Main Layout Container -->
-      <div class="flex-1 flex flex-col min-w-0 overflow-hidden min-h-screen">
-        <!-- Topbar Header -->
-        <app-header
-          (toggleSidebar)="isMobileSidebarOpen = !isMobileSidebarOpen"
-          (openCreatePosition)="isCreatePositionOpen = true"
-        ></app-header>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
-          <app-breadcrumbs></app-breadcrumbs>
-          <router-outlet></router-outlet>
-        </main>
-      </div>
+      <!-- Main Content Area -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <app-breadcrumbs></app-breadcrumbs>
+        <router-outlet></router-outlet>
+      </main>
 
       <!-- Global Toast Alerts -->
       <app-toast-container></app-toast-container>
@@ -238,8 +212,6 @@ export class AppShellComponent {
   private positionService = inject(PositionService);
   private toastService = inject(ToastService);
 
-  isSidebarCollapsed = false;
-  isMobileSidebarOpen = false;
   isCreatePositionOpen = false;
 
   departments = DEPARTMENTS;
