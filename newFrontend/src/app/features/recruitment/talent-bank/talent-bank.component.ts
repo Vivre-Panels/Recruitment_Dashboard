@@ -77,8 +77,9 @@ interface TalentCandidate {
               *ngIf="searchTerm() || selectedDepartment() !== 'ALL' || selectedExperience() !== 'ALL'"
               type="button"
               (click)="resetFilters()"
-              class="text-xs font-semibold text-slate-500 hover:text-slate-800 px-3 py-2 cursor-pointer"
+              class="text-xs font-semibold text-slate-500 hover:text-slate-800 px-3 py-2 cursor-pointer inline-flex items-center gap-1.5"
             >
+              <app-icon name="rotate-ccw" [size]="13"></app-icon>
               Reset Filters
             </button>
           </div>
@@ -197,6 +198,7 @@ interface TalentCandidate {
         title="No talent profiles match"
         message="Try loosening your experience or availability filters."
         actionLabel="Reset Filters"
+        actionIcon="rotate-ccw"
         (actionClick)="resetFilters()"
       ></app-empty-state>
 

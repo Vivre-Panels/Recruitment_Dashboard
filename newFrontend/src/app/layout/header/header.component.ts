@@ -7,7 +7,7 @@ import { CandidateService } from '../../core/services/candidate.service';
 import { SlaService } from '../../core/services/sla.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
-import { NAV_MODULES, NavItem } from '../../core/constants/navigation.constant';
+import { NAV_MODULES } from '../../core/constants/navigation.constant';
 
 @Component({
   selector: 'app-header',
@@ -82,7 +82,7 @@ import { NAV_MODULES, NavItem } from '../../core/constants/navigation.constant';
             <!-- Search Results Dropdown -->
             <div 
               *ngIf="showSearchResults && searchQuery.trim().length > 0"
-              class="absolute top-full right-0 sm:left-0 sm:right-auto w-80 sm:w-96 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-96 overflow-y-auto text-slate-900"
+              class="absolute top-full right-0 w-80 sm:w-96 max-w-[calc(100vw-1rem)] mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-96 overflow-y-auto text-slate-900"
             >
               <!-- Positions Matches -->
               <div *ngIf="matchedPositions.length > 0">
@@ -135,7 +135,7 @@ import { NAV_MODULES, NavItem } from '../../core/constants/navigation.constant';
           </div>
 
           <!-- SLA Alerts Bell Button -->
-          <div class="relative">
+          <!-- <div class="relative">
             <button 
               type="button" 
               (click)="toggleNotifications($event)"
@@ -149,7 +149,6 @@ import { NAV_MODULES, NavItem } from '../../core/constants/navigation.constant';
               ></span>
             </button>
 
-            <!-- Notifications Popup -->
             <div 
               *ngIf="showNotifications"
               (click)="$event.stopPropagation()"
@@ -189,39 +188,9 @@ import { NAV_MODULES, NavItem } from '../../core/constants/navigation.constant';
                 </a>
               </div>
             </div>
-          </div>
+          </div> -->
 
-          <!-- Read-Only Mode Badge -->
-          <span class="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/90 text-slate-300 text-[11px] font-medium border border-slate-700/60">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Read-Only Admin Monitor
-          </span>
-
-          <!-- User Profile Pill -->
-          <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
-            <div class="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-              RS
-            </div>
-            <div class="hidden md:block text-left">
-              <span class="text-xs font-bold text-white block leading-tight">Rahul Sharma</span>
-              <span class="text-[10px] text-slate-400 block leading-tight font-medium">Head of Talent Ops</span>
-            </div>
-          </div>
         </div>
-      </div>
-
-      <!-- Secondary Sub-Tabs Row (Rendered when active module has child routes) -->
-      <div *ngIf="activeSubItems.length > 0" class="bg-slate-950/80 border-t border-slate-800 px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto text-xs">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2 shrink-0 hidden sm:inline-block">Tabs:</span>
-        <a
-          *ngFor="let child of activeSubItems"
-          [routerLink]="child.route"
-          routerLinkActive="bg-brand-500/20 text-brand-300 font-bold border-brand-500/50"
-          class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-800 transition-all flex items-center gap-1.5 shrink-0"
-        >
-          <app-icon *ngIf="child.icon" [name]="child.icon" [size]="14" class="text-slate-400"></app-icon>
-          <span>{{ child.label }}</span>
-        </a>
       </div>
 
       <!-- Mobile Dropdown Navigation Menu -->
@@ -257,15 +226,6 @@ export class HeaderComponent {
 
   matchedPositions: any[] = [];
   matchedCandidates: any[] = [];
-
-  get activeSubItems(): NavItem[] {
-    const current = this.router.url;
-    const activeMod = this.navModules.find(m => {
-      const prefix = m.route.split('/')[1];
-      return current.includes(`/${prefix}/`);
-    });
-    return activeMod?.children || [];
-  }
 
   isRouteActive(baseRoute: string): boolean {
     const current = this.router.url;

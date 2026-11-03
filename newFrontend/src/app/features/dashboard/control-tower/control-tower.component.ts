@@ -82,9 +82,10 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             *ngIf="activeFilterCount() > 0 || searchTerm()"
             type="button"
             (click)="resetFilters()"
-            class="text-xs text-slate-500 hover:text-slate-800 font-bold px-2 py-1 cursor-pointer"
+            class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 font-bold px-2 py-1 cursor-pointer"
           >
-            Reset
+            <app-icon name="rotate-ccw" [size]="13"></app-icon>
+            Reset Filters
           </button>
         </div>
       </div>
@@ -159,6 +160,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             title="No control tower positions match criteria"
             message="Please refine your search or filter configuration."
             actionLabel="Reset Grid Filters"
+            actionIcon="rotate-ccw"
             (actionClick)="resetFilters()"
           ></app-empty-state>
         </div>
@@ -251,7 +253,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
           <button 
             type="button" 
             (click)="isDrawerOpen = false"
-            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl bg-white cursor-pointer"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl bg-white cursor-pointer"
           >
             Close
           </button>
@@ -334,7 +336,8 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             (click)="resetFilters()"
             class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl bg-white cursor-pointer"
           >
-            Clear All
+            <app-icon name="rotate-ccw" [size]="14"></app-icon>
+            Reset Filters
           </button>
 
           <button

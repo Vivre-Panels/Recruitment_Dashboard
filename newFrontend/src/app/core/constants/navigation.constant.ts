@@ -23,21 +23,6 @@ export const NAV_MODULES: NavItem[] = [
       // { label: 'Requirements', icon: 'list', route: '/recruitment/requirements' },
       // { label: 'Talent Bank', icon: 'database', route: '/recruitment/talent-bank' }
     ]
-  },
-  {
-    label: 'Analytics',
-    icon: 'trending-up',
-    route: '/analytics/funnel'
-  },
-  {
-    label: 'Performance',
-    icon: 'award',
-    route: '/performance/recruiter-scorecard'
-  },
-  {
-    label: 'Weekly Review',
-    icon: 'calendar',
-    route: '/weekly-review/overview'
   }
 ];
 

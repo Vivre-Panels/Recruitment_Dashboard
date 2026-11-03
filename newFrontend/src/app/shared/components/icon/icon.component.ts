@@ -254,6 +254,11 @@ import { CommonModule } from '@angular/common';
         <path d="M22 2 11 13" />
       </g>
 
+      <g *ngSwitchCase="'rotate-ccw'">
+        <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" />
+        <path d="M3 3v5h5" />
+      </g>
+
       <g *ngSwitchCase="'menu'">
         <line x1="4" x2="20" y1="12" y2="12" />
         <line x1="4" x2="20" y1="6" y2="6" />

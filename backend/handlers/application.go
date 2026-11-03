@@ -62,6 +62,19 @@ func CreateApplication(c *gin.Context) {
 				[Manager_Interview_DateTime] = @p20,
 				[Manager_Round_Schedule_DateTime] = @p21,
 				[Manager_Round_Completed_Time] = @p22,
+				[n_Round_Delay] = @p23,
+				[n_Round_Delay_Reason] = @p24,
+				[rd_Round_Delay] = @p25,
+				[rd_Round_Delay_Reason] = @p26,
+				[Breakup_Delay] = @p27,
+				[Breakup_Delay_Reason] = @p28,
+				[Delay] = @p29,
+				[Delay_Reason] = @p30,
+				[Designation_Delay] = @p31,
+				[Offer_letter_Delay] = @p32,
+				[Offer_Letter_Delay_Reason] = @p33,
+				[Salary_Negotiation_Delay] = @p34,
+				[Salary_Negotiation_Delay_Reason] = @p35,
 				[UpdatedAt] = GETUTCDATE()
 		WHEN NOT MATCHED THEN
 			INSERT ([Application_ID], [Application_Created_Time], [Application_Status],
@@ -69,9 +82,13 @@ func CreateApplication(c *gin.Context) {
 				[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [External_Position], [Recruiter_Name],
 				[Source], [Profile_Summary], [Tellecalling_Feedback],
 				[TelleCalling_Time], [Tellecalling_Status], [Offer_Accepted_DateTime],
-				[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time])
+				[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time],
+				[n_Round_Delay], [n_Round_Delay_Reason], [rd_Round_Delay], [rd_Round_Delay_Reason],
+				[Breakup_Delay], [Breakup_Delay_Reason], [Delay], [Delay_Reason], [Designation_Delay],
+				[Offer_letter_Delay], [Offer_Letter_Delay_Reason], [Salary_Negotiation_Delay], [Salary_Negotiation_Delay_Reason])
 			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15,
-				@p16, @p17, @p18, @p19, @p20, @p21, @p22)
+				@p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29,
+				@p30, @p31, @p32, @p33, @p34, @p35)
 		OUTPUT INSERTED.[Id];`
 
 	auditScore := parseFloat(app.CallAuditScore)
@@ -103,6 +120,19 @@ func CreateApplication(c *gin.Context) {
 		app.ManagerInterviewDateTime,
 		app.ManagerRoundScheduleDateTime,
 		app.ManagerRoundCompletedTime,
+		app.NRoundDelay,
+		app.NRoundDelayReason,
+		app.RDRoundDelay,
+		app.RDRoundDelayReason,
+		app.BreakupDelay,
+		app.BreakupDelayReason,
+		app.Delay,
+		app.DelayReason,
+		app.DesignationDelay,
+		app.OfferLetterDelay,
+		app.OfferLetterDelayReason,
+		app.SalaryNegotiationDelay,
+		app.SalaryNegotiationDelayReason,
 	).Scan(&newID)
 
 	if err != nil {
@@ -292,6 +322,9 @@ func GetApplications(c *gin.Context) {
 		a.[Recruiter_Name], a.[Source], a.[Profile_Summary], a.[Tellecalling_Feedback],
 		a.[TelleCalling_Time], a.[Tellecalling_Status], a.[Offer_Accepted_DateTime],
 		a.[Manager_Interview_DateTime], a.[Manager_Round_Schedule_DateTime], a.[Manager_Round_Completed_Time],
+		a.[n_Round_Delay], a.[n_Round_Delay_Reason], a.[rd_Round_Delay], a.[rd_Round_Delay_Reason],
+		a.[Breakup_Delay], a.[Breakup_Delay_Reason], a.[Delay], a.[Delay_Reason], a.[Designation_Delay],
+		a.[Offer_letter_Delay], a.[Offer_Letter_Delay_Reason], a.[Salary_Negotiation_Delay], a.[Salary_Negotiation_Delay_Reason],
 		a.[Call_Duration], a.[Performance_Score], a.[Behaviour_Score], a.[Performance_Eval_Details],
 		a.[Behaviour_Eval_Details], a.[Retention_7d_Status], a.[Retention_30d_Status],
 		a.[Is_30d_Failure], a.[Replacement_Required], a.[In_Talent_Bank], a.[Candidate_Attributes],

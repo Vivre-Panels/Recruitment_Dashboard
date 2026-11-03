@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HeaderComponent } from '../header/header.component';
-import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component';
+// import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component';
 import { ToastContainerComponent } from '../../shared/components/toast/toast.component';
 import { DrawerComponent } from '../../shared/components/drawer/drawer.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
@@ -19,21 +19,21 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
     RouterModule,
     ReactiveFormsModule,
     HeaderComponent,
-    BreadcrumbsComponent,
+    // BreadcrumbsComponent,
     ToastContainerComponent,
     DrawerComponent,
     IconComponent
   ],
   template: `
-    <div class="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+    <div class="app-shell-root bg-slate-50 flex flex-col font-sans text-slate-900">
       <!-- Topbar Header with Navs & Sub-Tabs -->
       <app-header
         (openCreatePosition)="isCreatePositionOpen = true"
       ></app-header>
 
       <!-- Main Content Area -->
-      <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
-        <app-breadcrumbs></app-breadcrumbs>
+      <main class="app-shell-main flex-1 min-h-0 p-4 sm:p-6 lg:p-8 overflow-hidden max-w-7xl w-full mx-auto">
+        <!-- <app-breadcrumbs></app-breadcrumbs> -->
         <router-outlet></router-outlet>
       </main>
 

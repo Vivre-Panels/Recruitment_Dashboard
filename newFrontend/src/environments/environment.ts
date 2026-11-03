@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://server3.vivrepanelserp.xyz/recruit_api'
+  apiUrl: 'http://localhost:8080/recruit_api'
 };

@@ -7,7 +7,7 @@ import { IconComponent } from '../icon/icon.component';
   standalone: true,
   imports: [CommonModule, IconComponent],
   template: `
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white border-t border-slate-100 text-xs">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-slate-100 border-t border-slate-200 text-xs">
       <!-- Item Count Summary -->
       <div class="text-slate-500 font-medium">
         Showing <span class="font-bold text-slate-800 font-mono">{{ startItem }}</span>

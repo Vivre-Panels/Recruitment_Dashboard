@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { PositionService } from '../../../core/services/position.service';
 import { CandidateService } from '../../../core/services/candidate.service';
 import { AnalyticsService } from '../../../core/services/analytics.service';
@@ -19,6 +20,7 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 import { DragScrollDirective } from '../../../shared/directives/drag-scroll.directive';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard-overview',
@@ -44,7 +46,6 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
       <!-- Page Header with View Switcher Tabs -->
       <app-page-header
         title="Recruitment Dashboard"
-        subtitle="Executive operational health, headcount requirements, and attention-required vacancies."
       >
         <div actions class="flex flex-wrap items-center gap-3">
           <app-view-switcher-tabs [tabs]="dashboardTabs"></app-view-switcher-tabs>
@@ -169,7 +170,6 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
               <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
               Attention Required Positions
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Vacancies flagged with SLA delay or critical headcount bottlenecks</p>
           </div>
 
           <a 
@@ -255,7 +255,7 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr 
-                *ngFor="let pos of filteredPositions()"
+                *ngFor="let pos of filteredRequisitions()"
                 (click)="openDrawer(pos)"
                 class="hover:bg-slate-50/80 transition-colors cursor-pointer group"
               >
@@ -299,12 +299,11 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
             </tbody>
           </table>
 
+          <app-loading-state *ngIf="isRequisitionsLoading()" type="table" [rows]="4"></app-loading-state>
           <app-empty-state
-            *ngIf="filteredPositions().length === 0"
-            title="No positions match filters"
-            message="Reset search query or filter selection."
-            actionLabel="Reset Filters"
-            (actionClick)="resetFilters()"
+            *ngIf="!isRequisitionsLoading() && filteredRequisitions().length === 0"
+            [title]="requisitionLoadError() ? 'Requisitions could not be loaded' : 'No requisitions found'"
+            [message]="requisitionLoadError() || 'No database requisitions match the current search and filters.'"
           ></app-empty-state>
         </div>
       </div>
@@ -427,9 +426,10 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
           <button
             type="button"
             (click)="resetFilters()"
-            class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl bg-white cursor-pointer"
+            class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 border border-slate-200 rounded-xl bg-white cursor-pointer"
           >
-            Clear All
+            <app-icon name="rotate-ccw" [size]="14"></app-icon>
+            Reset Filters
           </button>
 
           <button
@@ -748,11 +748,78 @@ import { DragScrollDirective } from '../../../shared/directives/drag-scroll.dire
   `
 })
 export class DashboardOverviewComponent {
+  private http = inject(HttpClient);
   positionService = inject(PositionService);
   candidateService = inject(CandidateService);
   analyticsService = inject(AnalyticsService);
   recruiterService = inject(RecruiterService);
   private router = inject(Router);
+
+  activeRequisitions = signal<Position[]>([]);
+  isRequisitionsLoading = signal<boolean>(true);
+  requisitionLoadError = signal<string>('');
+
+  constructor() {
+    this.loadActiveRequisitions();
+  }
+
+  private loadActiveRequisitions() {
+    this.isRequisitionsLoading.set(true);
+    this.requisitionLoadError.set('');
+    this.http.get<{ success: boolean; data: any[] }>(`${environment.apiUrl}/requisitions`).subscribe({
+      next: (response) => {
+        if (!response.success || !Array.isArray(response.data)) {
+          this.activeRequisitions.set([]);
+          this.requisitionLoadError.set('The requisitions API returned an invalid response.');
+          this.isRequisitionsLoading.set(false);
+          return;
+        }
+
+        this.activeRequisitions.set(response.data.map((item) => this.mapRequisitionToPosition(item)));
+        this.isRequisitionsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to load requisitions from the database API:', error);
+        this.activeRequisitions.set([]);
+        this.requisitionLoadError.set('Could not reach the database requisitions API. Please try again later.');
+        this.isRequisitionsLoading.set(false);
+      }
+    });
+  }
+
+  private mapRequisitionToPosition(item: any): Position {
+    const id = String(item.job_opening_id || item.Job_Opening_ID || item.requisition_id || item.Requisition_ID || `POS-${item.id || item.Id || ''}`);
+    const rawStatus = String(item.status || item.Status || '').toLowerCase();
+    const status = rawStatus.includes('critical') ? 'Critical' : rawStatus.includes('risk') ? 'At Risk' : 'On Track';
+    const openings = Number(item.no_of_openings ?? item.No_Of_Openings ?? 1);
+    const splitList = (value: unknown): string[] => typeof value === 'string' && value.trim()
+      ? value.split(',').map(part => part.trim()).filter(Boolean)
+      : [];
+
+    return {
+      id,
+      title: item.job_title || item.Job_Title || 'Untitled Position',
+      department: item.department || item.Department || '',
+      team: item.team || item.Team || '',
+      requiredHc: Number.isFinite(openings) && openings > 0 ? openings : 1,
+      joinedHc: 0,
+      priority: (item.priority || item.Priority || 'P1') as Position['priority'],
+      owner: item.recruiter_name || item.Recruiter_Name || '',
+      recruiterId: String(item.recruiter_id || item.Recruiter_ID || ''),
+      hiringManager: item.hiring_manager || item.Hiring_Manager || '',
+      targetDate: item.target_date || item.Target_Date || '',
+      createdAt: item.opening_date || item.Opening_Date || item.CreatedAt || '',
+      salaryRange: item.salary_range || item.Salary_Range || '',
+      location: item.location || item.Location || '',
+      experienceRange: item.experience_required || item.Experience_Required || '',
+      status,
+      mustHaveSkills: splitList(item.must_haves || item.Must_Haves),
+      knockoutCriteria: splitList(item.knockout_criteria || item.Knockout_Criteria),
+      description: item.job_description || item.Job_Description || '',
+      funnelCounts: { sourced: 0, screened: 0, interviewed: 0, selected: 0, offered: 0, accepted: 0, joined: 0 },
+      activeCandidatesCount: 0
+    };
+  }
 
   dashboardTabs: ViewTab[] = [
     { label: 'Card Overview', icon: 'pie-chart', route: '/dashboard/overview' },
@@ -982,16 +1049,23 @@ export class DashboardOverviewComponent {
     return this.positionService.positions().filter(p => p.status === 'Critical' || p.status === 'At Risk').slice(0, 3);
   });
 
-  filteredPositions = computed(() => {
-    return this.positionService.positions().filter(p => {
+  filteredRequisitions = computed(() => {
+    const enrichedPositions = this.positionService.positions();
+    return this.activeRequisitions().map(requisition => {
+      const pipelineMatch = enrichedPositions.find(position =>
+        position.id.toLowerCase() === requisition.id.toLowerCase() ||
+        position.title.toLowerCase() === requisition.title.toLowerCase()
+      );
+      return pipelineMatch
+        ? { ...requisition, joinedHc: pipelineMatch.joinedHc, funnelCounts: pipelineMatch.funnelCounts }
+        : requisition;
+    }).filter(p => {
       const matchesSearch = !this.searchTerm ||
         p.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         p.owner.toLowerCase().includes(this.searchTerm.toLowerCase());
-
       const matchesDept = this.selectedDepartment === 'ALL' || p.department === this.selectedDepartment;
       const matchesPriority = this.selectedPriority === 'ALL' || p.priority === this.selectedPriority;
       const matchesOwner = this.selectedOwner === 'ALL' || p.owner === this.selectedOwner;
-
       return matchesSearch && matchesDept && matchesPriority && matchesOwner;
     });
   });

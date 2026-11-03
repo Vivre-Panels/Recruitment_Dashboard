@@ -158,6 +158,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
             title="No SLA records found"
             message="All checkpoints match standard operational targets."
             actionLabel="Reset Filter"
+            actionIcon="rotate-ccw"
             (actionClick)="resetFilters()"
           ></app-empty-state>
 

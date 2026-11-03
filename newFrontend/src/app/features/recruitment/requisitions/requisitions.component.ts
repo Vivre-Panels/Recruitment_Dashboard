@@ -1,13 +1,11 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { PositionService } from '../../../core/services/position.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DEPARTMENTS, RECRUITERS_LIST } from '../../../core/constants/navigation.constant';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { PriorityBadgeComponent } from '../../../shared/components/priority-badge/priority-badge.component';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
@@ -25,7 +23,7 @@ export interface RequisitionItem {
   jobTitle: string;
   department: string;
   team?: string;
-  noOfOpenings: number;
+  noOfOpenings: number | null;
   openingDate: string;
   targetDate: string;
   recruiterName: string;
@@ -51,7 +49,6 @@ export interface RequisitionItem {
     RouterModule,
     FormsModule,
     PageHeaderComponent,
-    KpiCardComponent,
     StatusBadgeComponent,
     PriorityBadgeComponent,
     SearchInputComponent,
@@ -62,194 +59,214 @@ export interface RequisitionItem {
     DrawerComponent
   ],
   template: `
-    <div class="space-y-6 max-w-7xl mx-auto">
+    <div class="h-full min-h-0 flex flex-col gap-2 max-w-7xl mx-auto">
       <!-- Page Header -->
       <app-page-header
+        [compact]="true"
         title="All Requisitions"
-        subtitle="Complete enterprise repository of all active, in-progress, and fulfilled job requisitions."
       >
-        <div badges class="flex items-center gap-2">
-          <span class="text-xs font-mono font-semibold px-2.5 py-0.5 bg-brand-50 text-brand-700 rounded-full border border-brand-200">
-            {{ totalRequisitionsCount() }} Requisitions Recorded
-          </span>
+        <div actions>
+          <button
+            type="button"
+            (click)="filtersVisible.update(open => !open)"
+            [attr.aria-expanded]="filtersVisible()"
+            aria-controls="requisition-filters"
+            class="h-9 px-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 shadow-sm hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 transition-colors"
+          >
+            <app-icon name="filter" [size]="16" class="text-brand-600"></app-icon>
+            <span>Filters</span>
+            <span *ngIf="activeFilterCount() > 0" class="min-w-5 h-5 px-1 rounded-full bg-brand-600 text-white text-[10px] inline-flex items-center justify-center">{{ activeFilterCount() }}</span>
+          </button>
         </div>
       </app-page-header>
 
-      <!-- Skeleton KPI Loader -->
-      <app-loading-state *ngIf="isLoading()" type="kpis"></app-loading-state>
-
-      <!-- KPI Overview Cards -->
-      <div *ngIf="!isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <app-kpi-card
-          title="Total Requisitions"
-          [value]="totalRequisitionsCount()"
-          subtitle="All logged job requests"
-          icon="briefcase"
-          accent="brand"
-        ></app-kpi-card>
-
-        <app-kpi-card
-          title="Open Requisitions"
-          [value]="openRequisitionsCount()"
-          subtitle="Actively hiring"
-          icon="clock"
-          accent="warning"
-        ></app-kpi-card>
-
-        <app-kpi-card
-          title="Total Required HC"
-          [value]="totalRequiredHc()"
-          subtitle="Headcount positions required"
-          icon="users"
-          accent="info"
-        ></app-kpi-card>
-
-        <app-kpi-card
-          title="P0 Critical Roles"
-          [value]="p0Count()"
-          subtitle="High priority positions"
-          icon="alert-triangle"
-          accent="danger"
-        ></app-kpi-card>
-      </div>
-
       <!-- Filters Bar -->
-      <div class="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-2xs space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="flex-1 max-w-md">
+      <div *ngIf="filtersVisible()" id="requisition-filters" class="p-3 bg-white border border-slate-200/90 rounded-2xl shadow-2xs shrink-0">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] gap-2 text-xs">
+          <div class="min-w-0">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Search</label>
             <app-search-input
+              class="block w-full [&>div]:max-w-none [&_input]:py-1.5"
               [value]="searchTerm()"
               (valueChange)="onSearchChange($event)"
               placeholder="Search by Requisition ID, Job Title, Owner, Manager..."
             ></app-search-input>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="relative min-w-0" data-filter-dropdown>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Department</label>
             <button
-              *ngIf="searchTerm() || selectedDepartment() !== 'ALL' || selectedPriority() !== 'ALL' || selectedStatus() !== 'ALL'"
+              type="button"
+              (click)="toggleFilterDropdown('department')"
+              [attr.aria-expanded]="openFilterDropdown() === 'department'"
+              aria-haspopup="listbox"
+              class="w-full h-8 px-3 flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-sm hover:border-brand-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+            >
+              <span class="truncate">{{ selectedDepartment() === 'ALL' ? 'All Departments' : selectedDepartment() }}</span>
+              <app-icon name="chevron-down" [size]="14" class="text-slate-400 shrink-0"></app-icon>
+            </button>
+            <div *ngIf="openFilterDropdown() === 'department'" role="listbox" class="absolute left-0 right-0 top-full mt-2 z-40 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
+              <button
+                *ngFor="let department of departmentOptions"
+                type="button"
+                role="option"
+                [attr.aria-selected]="selectedDepartment() === department.value"
+                (click)="onDeptChange(department.value)"
+                class="w-full px-2.5 py-2 flex items-center justify-between gap-2 rounded-lg text-left text-xs transition-colors"
+                [ngClass]="selectedDepartment() === department.value ? 'bg-brand-100 text-brand-800 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+              >
+                <span class="truncate">{{ department.label }}</span>
+                <app-icon *ngIf="selectedDepartment() === department.value" name="check" [size]="14" class="text-brand-600 shrink-0"></app-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative min-w-0" data-filter-dropdown>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Priority</label>
+            <button
+              type="button"
+              (click)="toggleFilterDropdown('priority')"
+              [attr.aria-expanded]="openFilterDropdown() === 'priority'"
+              aria-haspopup="listbox"
+              class="w-full h-8 px-3 flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-sm hover:border-brand-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+            >
+              <span class="truncate">{{ priorityLabel(selectedPriority()) }}</span>
+              <app-icon name="chevron-down" [size]="14" class="text-slate-400 shrink-0"></app-icon>
+            </button>
+            <div *ngIf="openFilterDropdown() === 'priority'" role="listbox" class="absolute left-0 right-0 top-full mt-2 z-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
+              <button
+                *ngFor="let option of priorityOptions"
+                type="button"
+                role="option"
+                [attr.aria-selected]="selectedPriority() === option.value"
+                (click)="onPriorityChange(option.value)"
+                class="w-full px-2.5 py-2 flex items-center justify-between gap-2 rounded-lg text-left text-xs transition-colors"
+                [ngClass]="selectedPriority() === option.value ? 'bg-brand-100 text-brand-800 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+              >
+                <span class="truncate">{{ option.label }}</span>
+                <app-icon *ngIf="selectedPriority() === option.value" name="check" [size]="14" class="text-brand-600 shrink-0"></app-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative min-w-0" data-filter-dropdown>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Status</label>
+            <button
+              type="button"
+              (click)="toggleFilterDropdown('status')"
+              [attr.aria-expanded]="openFilterDropdown() === 'status'"
+              aria-haspopup="listbox"
+              class="w-full h-8 px-3 flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 shadow-sm hover:border-brand-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+            >
+              <span class="truncate">{{ statusLabel(selectedStatus()) }}</span>
+              <app-icon name="chevron-down" [size]="14" class="text-slate-400 shrink-0"></app-icon>
+            </button>
+            <div *ngIf="openFilterDropdown() === 'status'" role="listbox" class="absolute left-0 right-0 top-full mt-2 z-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
+              <button
+                *ngFor="let option of statusOptions"
+                type="button"
+                role="option"
+                [attr.aria-selected]="selectedStatus() === option.value"
+                (click)="onStatusChange(option.value)"
+                class="w-full px-2.5 py-2 flex items-center justify-between gap-2 rounded-lg text-left text-xs transition-colors"
+                [ngClass]="selectedStatus() === option.value ? 'bg-brand-100 text-brand-800 font-bold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+              >
+                <span class="truncate">{{ option.label }}</span>
+                <app-icon *ngIf="selectedStatus() === option.value" name="check" [size]="14" class="text-brand-600 shrink-0"></app-icon>
+              </button>
+            </div>
+          </div>
+          <div class="min-w-0 flex items-end">
+            <button
               type="button"
               (click)="resetFilters()"
-              class="text-xs font-semibold text-slate-500 hover:text-slate-900 px-3 py-2 cursor-pointer"
+              [disabled]="!searchTerm() && selectedDepartment() === 'ALL' && selectedPriority() === 'ALL' && selectedStatus() === 'ALL'"
+              title="Reset filters"
+              aria-label="Reset filters"
+              class="h-8 min-w-[72px] px-2 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
-              Reset Filters
+              <app-icon name="rotate-ccw" [size]="16"></app-icon>
+              <span>Reset</span>
             </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-xs">
-          <div>
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
-            <select
-              [ngModel]="selectedDepartment()"
-              (ngModelChange)="onDeptChange($event)"
-              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-            >
-              <option value="ALL">All Departments</option>
-              <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Priority</label>
-            <select
-              [ngModel]="selectedPriority()"
-              (ngModelChange)="onPriorityChange($event)"
-              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-            >
-              <option value="ALL">All Priorities</option>
-              <option value="P0">P0 (Critical)</option>
-              <option value="P1">P1 (High)</option>
-              <option value="P2">P2 (Normal)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Status</label>
-            <select
-              [ngModel]="selectedStatus()"
-              (ngModelChange)="onStatusChange($event)"
-              class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="Open">Open / Active</option>
-              <option value="Closed">Closed / Fulfilled</option>
-              <option value="On Hold">On Hold</option>
-            </select>
           </div>
         </div>
       </div>
 
       <!-- Skeleton Table Loader -->
-      <app-loading-state *ngIf="isLoading()" type="table"></app-loading-state>
+      <app-loading-state *ngIf="isLoading()" type="table" class="flex-1 min-h-0"></app-loading-state>
 
       <!-- Requisitions Reusable Table -->
-      <div *ngIf="!isLoading()" class="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
-        <div class="overflow-x-auto">
+      <div *ngIf="!isLoading()" class="flex-1 min-h-0 flex flex-col bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+        <div class="requisitions-table-viewport flex-1 min-h-0 overflow-auto">
           <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th class="py-3.5 px-4">Req / Job ID</th>
-                <th class="py-3.5 px-4">Position</th>
-                <th class="py-3.5 px-3">Department</th>
-                <th class="py-3.5 px-3">Team</th>
-                <th class="py-3.5 px-3 text-center">Required HC</th>
-                <th class="py-3.5 px-3 text-center">Priority</th>
-                <th class="py-3.5 px-3">Recruiter & Manager</th>
-                <th class="py-3.5 px-3">Target Date</th>
-                <th class="py-3.5 px-3 text-center">Status</th>
+            <thead class="sticky top-0 z-10 bg-slate-100">
+              <tr class="border-b border-slate-200 bg-slate-100 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                <th class="py-2.5 px-3">Requisition ID</th>
+                <th class="py-2.5 px-3">Department</th>
+                <th class="py-2.5 px-3">Team</th>
+                <th class="py-2.5 px-3">Job Title</th>
+                <th class="py-2.5 px-3 text-center">No of Openings</th>
+                <th class="py-2.5 px-3">Opening Date</th>
+                <th class="py-2.5 px-3">Target Date</th>
+                <th class="py-2.5 px-3">Recruiter Name</th>
+                <th class="py-2.5 px-3 text-center">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr
                 *ngFor="let req of paginatedRequisitions()"
-                class="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                class="hover:bg-brand-50/70 transition-colors cursor-pointer"
                 (click)="openQuickView(req)"
               >
-                <!-- Req ID -->
-                <td class="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
-                  <div>{{ req.requisitionId || ('REQ-' + req.id) }}</div>
-                  <div class="text-[10px] text-slate-400 font-normal mt-0.5">Job: {{ req.jobOpeningId }}</div>
-                </td>
-
-                <!-- Position -->
-                <td class="py-3.5 px-4 font-bold text-slate-900">
-                  {{ req.jobTitle }}
+                <!-- Requisition ID -->
+                <td class="py-2.5 px-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  {{ req.requisitionId || '—' }}
                 </td>
 
                 <!-- Department -->
-                <td class="py-3.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
-                  {{ req.department }}
+                <td class="py-2.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
+                  {{ req.department || '—' }}
                 </td>
 
                 <!-- Team -->
-                <td class="py-3.5 px-3 font-medium text-slate-600 whitespace-nowrap">
+                <td class="py-2.5 px-3 font-medium text-slate-600 whitespace-nowrap">
                   {{ req.team || '—' }}
                 </td>
 
-                <!-- Required HC -->
-                <td class="py-3.5 px-3 text-center font-mono font-bold text-slate-900">
-                  {{ req.noOfOpenings }} HC
+                <!-- Job Title -->
+                <td class="py-2.5 px-3 font-bold text-slate-900">
+                  {{ req.jobTitle || '—' }}
                 </td>
 
-                <!-- Priority -->
-                <td class="py-3.5 px-3 text-center">
-                  <app-priority-badge [priority]="req.priority"></app-priority-badge>
+                <!-- Number of Openings -->
+                <td class="py-2.5 px-3 text-center font-mono font-bold text-slate-900">
+                  {{ req.noOfOpenings }}
                 </td>
 
-                <!-- Recruiter & Hiring Manager -->
-                <td class="py-3.5 px-3">
-                  <div class="font-semibold text-slate-900">{{ req.recruiterName || 'Unassigned' }}</div>
-                  <div class="text-[10px] text-slate-500 mt-0.5">HM: {{ req.hiringManager || 'Not Specified' }}</div>
+                <!-- Opening Date -->
+                <td class="py-2.5 px-3 font-mono text-slate-600 whitespace-nowrap">
+                  {{ req.openingDate || '—' }}
                 </td>
 
                 <!-- Target Date -->
-                <td class="py-3.5 px-3 font-mono text-slate-600 whitespace-nowrap">
-                  {{ req.targetDate || 'TBD' }}
+                <td class="py-2.5 px-3 font-mono text-slate-600 whitespace-nowrap">
+                  {{ req.targetDate || '—' }}
+                </td>
+
+                <!-- Recruiter Name -->
+                <td class="py-2.5 px-3 font-semibold text-slate-900 whitespace-nowrap">
+                  {{ req.recruiterName || 'Unassigned' }}
                 </td>
 
                 <!-- Status -->
-                <td class="py-3.5 px-3 text-center">
-                  <app-status-badge [status]="req.status"></app-status-badge>
+                <td class="py-2.5 px-3 text-center">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border whitespace-nowrap"
+                    [ngClass]="requisitionStatusClass(req.status)"
+                  >
+                    <span class="w-2 h-2 rounded-full" [ngClass]="requisitionStatusDotClass(req.status)"></span>
+                    {{ req.status || 'Unknown' }}
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -260,19 +277,20 @@ export interface RequisitionItem {
             title="No requisitions found"
             message="No requisition records match your search query or filters."
             actionLabel="Reset Filters"
+            actionIcon="rotate-ccw"
             (actionClick)="resetFilters()"
           ></app-empty-state>
 
-          <!-- Reusable Pagination Component -->
-          <app-pagination
-            *ngIf="filteredRequisitions().length > 0"
-            [totalItems]="filteredRequisitions().length"
-            [currentPage]="currentPage()"
-            [pageSize]="pageSize()"
-            (pageChange)="onPageChange($event)"
-            (pageSizeChange)="onPageSizeChange($event)"
-          ></app-pagination>
         </div>
+        <app-pagination
+          *ngIf="filteredRequisitions().length > 0"
+          class="block shrink-0"
+          [totalItems]="filteredRequisitions().length"
+          [currentPage]="currentPage()"
+          [pageSize]="pageSize()"
+          (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
+        ></app-pagination>
       </div>
 
       <!-- Quick View Requisition Drawer -->
@@ -355,18 +373,41 @@ export interface RequisitionItem {
 })
 export class RecruitmentRequisitionsComponent implements OnInit {
   private http = inject(HttpClient);
-  private positionService = inject(PositionService);
   private toastService = inject(ToastService);
   private router = inject(Router);
 
   requisitions = signal<RequisitionItem[]>([]);
   isLoading = signal<boolean>(true);
   departments = DEPARTMENTS;
+  departmentOptions = [
+    { value: 'ALL', label: 'All Departments' },
+    ...DEPARTMENTS.map(department => ({ value: department, label: department }))
+  ];
+  priorityOptions = [
+    { value: 'ALL', label: 'All Priorities' },
+    { value: 'P0', label: 'P0 · Critical' },
+    { value: 'P1', label: 'P1 · High' },
+    { value: 'P2', label: 'P2 · Normal' }
+  ];
+  statusOptions = [
+    { value: 'ALL', label: 'All Statuses' },
+    { value: 'Open', label: 'Open / Active' },
+    { value: 'Closed', label: 'Closed / Fulfilled' },
+    { value: 'On Hold', label: 'On Hold' }
+  ];
 
   searchTerm = signal('');
   selectedDepartment = signal('ALL');
   selectedPriority = signal('ALL');
   selectedStatus = signal('ALL');
+  filtersVisible = signal(false);
+  activeFilterCount = computed(() => [
+    this.searchTerm().trim().length > 0,
+    this.selectedDepartment() !== 'ALL',
+    this.selectedPriority() !== 'ALL',
+    this.selectedStatus() !== 'ALL'
+  ].filter(Boolean).length);
+  openFilterDropdown = signal<'department' | 'priority' | 'status' | null>(null);
 
   currentPage = signal(1);
   pageSize = signal(10);
@@ -385,18 +426,18 @@ export class RecruitmentRequisitionsComponent implements OnInit {
         if (res.success && res.data && res.data.length > 0) {
           const mapped: RequisitionItem[] = res.data.map(item => ({
             id: item.id || item.Id,
-            requisitionId: item.requisition_id || item.Requisition_ID || `REQ-${item.id || item.Id}`,
+            requisitionId: item.requisition_id ?? item.Requisition_ID ?? '',
             jobOpeningId: item.job_opening_id || item.Job_Opening_ID || `JOB-${item.id || item.Id}`,
-            jobTitle: item.job_title || item.Job_Title || 'Untitled Position',
-            department: item.department || item.Department || 'Engineering',
+            jobTitle: item.job_title ?? item.Job_Title ?? '',
+            department: item.department ?? item.Department ?? '',
             team: item.team || item.Team || item.Team_Name || '',
-            noOfOpenings: item.no_of_openings || item.No_Of_Openings || 1,
+            noOfOpenings: item.no_of_openings ?? item.No_Of_Openings ?? null,
             openingDate: item.opening_date || item.Opening_Date || '',
             targetDate: item.target_date || item.Target_Date || '',
             recruiterName: item.recruiter_name || item.Recruiter_Name || '',
             hiringManager: item.hiring_manager || item.Hiring_Manager || '',
             priority: (item.priority || item.Priority || 'P1') as any,
-            status: item.status || item.Status || 'Open',
+            status: item.status ?? item.Status ?? '',
             salaryRange: item.salary_range || item.Salary_Range,
             location: item.location || item.Location,
             experienceRequired: item.experience_required || item.Experience_Required,
@@ -409,40 +450,16 @@ export class RecruitmentRequisitionsComponent implements OnInit {
           }));
           this.requisitions.set(mapped);
         } else {
-          this.fallbackFromPositions();
+          this.requisitions.set([]);
         }
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.warn('Requisitions API connection failed, falling back to position state:', err);
-        this.fallbackFromPositions();
+        console.warn('Requisitions API connection failed:', err);
+        this.requisitions.set([]);
         this.isLoading.set(false);
       }
     });
-  }
-
-  private fallbackFromPositions() {
-    const positions = this.positionService.positions();
-    const mapped: RequisitionItem[] = positions.map(p => ({
-      id: p.id,
-      requisitionId: `REQ-${p.id}`,
-      jobOpeningId: p.id,
-      jobTitle: p.title,
-      department: p.department,
-      team: p.team || '',
-      noOfOpenings: p.requiredHc,
-      openingDate: p.createdAt,
-      targetDate: p.targetDate,
-      recruiterName: p.owner,
-      hiringManager: p.hiringManager,
-      priority: p.priority as any,
-      status: p.status === 'Critical' ? 'At Risk' : 'Open',
-      salaryRange: p.salaryRange,
-      location: p.location,
-      experienceRequired: p.experienceRange,
-      jobDescription: p.description
-    }));
-    this.requisitions.set(mapped);
   }
 
   filteredRequisitions = computed(() => {
@@ -488,6 +505,26 @@ export class RecruitmentRequisitionsComponent implements OnInit {
     this.requisitions().filter(r => r.priority === 'P0').length
   );
 
+  priorityLabel(value: string): string {
+    return this.priorityOptions.find(option => option.value === value)?.label || 'All Priorities';
+  }
+
+  statusLabel(value: string): string {
+    return this.statusOptions.find(option => option.value === value)?.label || 'All Statuses';
+  }
+
+  toggleFilterDropdown(dropdown: 'department' | 'priority' | 'status') {
+    this.openFilterDropdown.update(current => current === dropdown ? null : dropdown);
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeFilterDropdownOnOutsideClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('[data-filter-dropdown]')) {
+      this.openFilterDropdown.set(null);
+    }
+  }
+
   onSearchChange(val: string) {
     this.searchTerm.set(val);
     this.currentPage.set(1);
@@ -495,16 +532,19 @@ export class RecruitmentRequisitionsComponent implements OnInit {
 
   onDeptChange(val: string) {
     this.selectedDepartment.set(val);
+    this.openFilterDropdown.set(null);
     this.currentPage.set(1);
   }
 
   onPriorityChange(val: string) {
     this.selectedPriority.set(val);
+    this.openFilterDropdown.set(null);
     this.currentPage.set(1);
   }
 
   onStatusChange(val: string) {
     this.selectedStatus.set(val);
+    this.openFilterDropdown.set(null);
     this.currentPage.set(1);
   }
 
@@ -527,6 +567,47 @@ export class RecruitmentRequisitionsComponent implements OnInit {
     this.selectedDepartment.set('ALL');
     this.selectedPriority.set('ALL');
     this.selectedStatus.set('ALL');
+    this.openFilterDropdown.set(null);
     this.currentPage.set(1);
+  }
+
+  requisitionStatusClass(status: string): string {
+    switch ((status || '').trim().toLowerCase()) {
+      case 'open':
+      case 'active':
+        return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+      case 'in-progress':
+      case 'in progress':
+        return 'bg-blue-50 text-blue-800 border-blue-200';
+      case 'on hold':
+      case 'on-hold':
+        return 'bg-amber-50 text-amber-800 border-amber-200';
+      case 'closed':
+        return 'bg-slate-100 text-slate-700 border-slate-300';
+      case 'fulfilled':
+        return 'bg-teal-50 text-teal-800 border-teal-200';
+      case 'cancelled':
+      case 'canceled':
+        return 'bg-rose-50 text-rose-800 border-rose-200';
+      default:
+        return 'bg-violet-50 text-violet-800 border-violet-200';
+    }
+  }
+
+  requisitionStatusDotClass(status: string): string {
+    switch ((status || '').trim().toLowerCase()) {
+      case 'open':
+      case 'active': return 'bg-emerald-500';
+      case 'in-progress':
+      case 'in progress': return 'bg-blue-500';
+      case 'on hold':
+      case 'on-hold': return 'bg-amber-500';
+      case 'closed':
+        return 'bg-slate-500';
+      case 'fulfilled': return 'bg-teal-500';
+      case 'cancelled':
+      case 'canceled': return 'bg-rose-500';
+      default: return 'bg-violet-500';
+    }
   }
 }

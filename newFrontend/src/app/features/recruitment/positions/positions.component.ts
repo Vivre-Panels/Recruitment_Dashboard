@@ -73,9 +73,10 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
             *ngIf="activeFilterCount() > 0 || searchTerm()"
             type="button"
             (click)="resetFilters()"
-            class="text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-1 cursor-pointer"
+            class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 font-semibold px-2 py-1 cursor-pointer"
           >
-            Reset
+            <app-icon name="rotate-ccw" [size]="13"></app-icon>
+            Reset Filters
           </button>
         </div>
       </div>
@@ -183,6 +184,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
             title="No positions match criteria"
             message="Please clear or update your search filter settings."
             actionLabel="Reset Filters"
+            actionIcon="rotate-ccw"
             (actionClick)="resetFilters()"
           ></app-empty-state>
         </div>
@@ -241,7 +243,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
           <button 
             type="button" 
             (click)="isDrawerOpen = false"
-            class="app-btn-secondary cursor-pointer"
+            class="app-btn-secondary inline-flex items-center gap-1.5 cursor-pointer"
           >
             Close
           </button>
@@ -298,7 +300,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
             (click)="resetFilters()"
             class="app-btn-secondary cursor-pointer"
           >
-            Clear All
+            <app-icon name="rotate-ccw" [size]="14"></app-icon>
+            Reset Filters
           </button>
 
           <button

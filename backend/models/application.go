@@ -28,6 +28,19 @@ type Application struct {
 	ManagerInterviewDateTime     *string     `json:"Manager_Interview_DateTime" db:"Manager_Interview_DateTime"`
 	ManagerRoundScheduleDateTime *string     `json:"Manager_Round_Schedule_DateTime" db:"Manager_Round_Schedule_DateTime"`
 	ManagerRoundCompletedTime    *string     `json:"Manager_Round_Completed_Time" db:"Manager_Round_Completed_Time"`
+	NRoundDelay                  *string     `json:"n_Round_Delay" db:"n_Round_Delay"`
+	NRoundDelayReason            *string     `json:"n_Round_Delay_Reason" db:"n_Round_Delay_Reason"`
+	RDRoundDelay                 *string     `json:"rd_Round_Delay" db:"rd_Round_Delay"`
+	RDRoundDelayReason           *string     `json:"rd_Round_Delay_Reason" db:"rd_Round_Delay_Reason"`
+	BreakupDelay                 *string     `json:"Breakup_Delay" db:"Breakup_Delay"`
+	BreakupDelayReason           *string     `json:"Breakup_Delay_Reason" db:"Breakup_Delay_Reason"`
+	Delay                        *string     `json:"Delay" db:"Delay"`
+	DelayReason                  *string     `json:"Delay_Reason" db:"Delay_Reason"`
+	DesignationDelay             *string     `json:"Designation_Delay" db:"Designation_Delay"`
+	OfferLetterDelay             *string     `json:"Offer_letter_Delay" db:"Offer_letter_Delay"`
+	OfferLetterDelayReason       *string     `json:"Offer_Letter_Delay_Reason" db:"Offer_Letter_Delay_Reason"`
+	SalaryNegotiationDelay       *string     `json:"Salary_Negotiation_Delay" db:"Salary_Negotiation_Delay"`
+	SalaryNegotiationDelayReason *string     `json:"Salary_Negotiation_Delay_Reason" db:"Salary_Negotiation_Delay_Reason"`
 	CallDuration                 *float64    `json:"Call_Duration" db:"Call_Duration"`
 
 	// Follow up
