@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../../core/services/toast.service';
-import { DEPARTMENTS, RECRUITERS_LIST } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { PriorityBadgeComponent } from '../../../shared/components/priority-badge/priority-badge.component';
@@ -107,7 +107,7 @@ export interface RequisitionItem {
             </button>
             <div *ngIf="openFilterDropdown() === 'department'" role="listbox" class="absolute left-0 right-0 top-full mt-2 z-40 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
               <button
-                *ngFor="let department of departmentOptions"
+                *ngFor="let department of departmentOptions()"
                 type="button"
                 role="option"
                 [attr.aria-selected]="selectedDepartment() === department.value"
@@ -135,7 +135,7 @@ export interface RequisitionItem {
             </button>
             <div *ngIf="openFilterDropdown() === 'priority'" role="listbox" class="absolute left-0 right-0 top-full mt-2 z-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
               <button
-                *ngFor="let option of priorityOptions"
+                *ngFor="let option of priorityOptions()"
                 type="button"
                 role="option"
                 [attr.aria-selected]="selectedPriority() === option.value"
@@ -163,7 +163,7 @@ export interface RequisitionItem {
             </button>
             <div *ngIf="openFilterDropdown() === 'status'" role="listbox" class="absolute left-0 right-0 top-full mt-2 z-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/5">
               <button
-                *ngFor="let option of statusOptions"
+                *ngFor="let option of statusOptions()"
                 type="button"
                 role="option"
                 [attr.aria-selected]="selectedStatus() === option.value"
@@ -375,26 +375,22 @@ export class RecruitmentRequisitionsComponent implements OnInit {
   private http = inject(HttpClient);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private lookups = inject(RecruitmentLookupsService);
 
   requisitions = signal<RequisitionItem[]>([]);
   isLoading = signal<boolean>(true);
-  departments = DEPARTMENTS;
-  departmentOptions = [
+  departmentOptions = computed(() => [
     { value: 'ALL', label: 'All Departments' },
-    ...DEPARTMENTS.map(department => ({ value: department, label: department }))
-  ];
-  priorityOptions = [
+    ...this.lookups.departments().map(department => ({ value: department, label: department }))
+  ]);
+  priorityOptions = computed(() => [
     { value: 'ALL', label: 'All Priorities' },
-    { value: 'P0', label: 'P0 · Critical' },
-    { value: 'P1', label: 'P1 · High' },
-    { value: 'P2', label: 'P2 · Normal' }
-  ];
-  statusOptions = [
+    ...this.lookups.priorities().map(value => ({ value, label: value }))
+  ]);
+  statusOptions = computed(() => [
     { value: 'ALL', label: 'All Statuses' },
-    { value: 'Open', label: 'Open / Active' },
-    { value: 'Closed', label: 'Closed / Fulfilled' },
-    { value: 'On Hold', label: 'On Hold' }
-  ];
+    ...this.lookups.statuses().map(value => ({ value, label: value }))
+  ]);
 
   searchTerm = signal('');
   selectedDepartment = signal('ALL');
@@ -436,7 +432,7 @@ export class RecruitmentRequisitionsComponent implements OnInit {
             targetDate: item.target_date || item.Target_Date || '',
             recruiterName: item.recruiter_name || item.Recruiter_Name || '',
             hiringManager: item.hiring_manager || item.Hiring_Manager || '',
-            priority: (item.priority || item.Priority || 'P1') as any,
+            priority: (item.priority || item.Priority || '') as any,
             status: item.status ?? item.Status ?? '',
             salaryRange: item.salary_range || item.Salary_Range,
             location: item.location || item.Location,
@@ -506,11 +502,11 @@ export class RecruitmentRequisitionsComponent implements OnInit {
   );
 
   priorityLabel(value: string): string {
-    return this.priorityOptions.find(option => option.value === value)?.label || 'All Priorities';
+    return this.priorityOptions().find(option => option.value === value)?.label || 'All Priorities';
   }
 
   statusLabel(value: string): string {
-    return this.statusOptions.find(option => option.value === value)?.label || 'All Statuses';
+    return this.statusOptions().find(option => option.value === value)?.label || 'All Statuses';
   }
 
   toggleFilterDropdown(dropdown: 'department' | 'priority' | 'status') {

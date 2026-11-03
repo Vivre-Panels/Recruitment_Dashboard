@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import { WeeklyReviewService } from '../../../core/services/weekly-review.service';
 import { PositionService } from '../../../core/services/position.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { PriorityBadgeComponent } from '../../../shared/components/priority-badge/priority-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
@@ -15,7 +14,6 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     CommonModule,
     RouterModule,
     PageHeaderComponent,
-    StatusBadgeComponent,
     PriorityBadgeComponent,
     IconComponent
   ],

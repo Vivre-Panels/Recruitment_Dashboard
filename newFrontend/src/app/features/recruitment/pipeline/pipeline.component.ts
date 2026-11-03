@@ -5,9 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { CandidateService } from '../../../core/services/candidate.service';
 import { PositionService } from '../../../core/services/position.service';
 import { Candidate } from '../../../core/models/recruitment.model';
-import { PIPELINE_STAGES, RECRUITERS_LIST } from '../../../core/constants/navigation.constant';
+import { PIPELINE_STAGES } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
@@ -20,7 +20,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
     RouterModule,
     FormsModule,
     PageHeaderComponent,
-    IconComponent,
     DrawerComponent,
     ViewSwitcherTabsComponent,
     LoadingStateComponent
@@ -50,7 +49,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
             class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
           >
             <option value="ALL">All Recruiters</option>
-            <option *ngFor="let r of recruiters" [value]="r.name">{{ r.name }}</option>
+            <option *ngFor="let r of recruiters()" [value]="r.recruiter_name">{{ r.recruiter_name }}</option>
           </select>
         </div>
       </app-page-header>
@@ -206,6 +205,7 @@ export class RecruitmentPipelineComponent implements OnInit {
   candidateService = inject(CandidateService);
   positionService = inject(PositionService);
   private route = inject(ActivatedRoute);
+  private lookups = inject(RecruitmentLookupsService);
 
   recruitmentTabs: ViewTab[] = [
     { label: 'All Requisitions', icon: 'file-text', route: '/recruitment/requisitions' },
@@ -214,7 +214,7 @@ export class RecruitmentPipelineComponent implements OnInit {
   ];
 
   pipelineStages = PIPELINE_STAGES;
-  recruiters = RECRUITERS_LIST;
+  recruiters = this.lookups.recruiters;
 
   selectedPositionId = 'ALL';
   selectedRecruiter = 'ALL';

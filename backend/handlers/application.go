@@ -75,6 +75,11 @@ func CreateApplication(c *gin.Context) {
 				[Offer_Letter_Delay_Reason] = @p33,
 				[Salary_Negotiation_Delay] = @p34,
 				[Salary_Negotiation_Delay_Reason] = @p35,
+				[First_Round_Drop_Off_Reason] = @p36,
+				[nd_Round_Drop_Off_Reason] = @p37,
+				[rd_Round_Drop_Off_Reason] = @p38,
+				[Background_Verification] = @p39,
+				[Background_Verification_Drop_Off_Reason] = @p40,
 				[UpdatedAt] = GETUTCDATE()
 		WHEN NOT MATCHED THEN
 			INSERT ([Application_ID], [Application_Created_Time], [Application_Status],
@@ -85,10 +90,12 @@ func CreateApplication(c *gin.Context) {
 				[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time],
 				[n_Round_Delay], [n_Round_Delay_Reason], [rd_Round_Delay], [rd_Round_Delay_Reason],
 				[Breakup_Delay], [Breakup_Delay_Reason], [Delay], [Delay_Reason], [Designation_Delay],
-				[Offer_letter_Delay], [Offer_Letter_Delay_Reason], [Salary_Negotiation_Delay], [Salary_Negotiation_Delay_Reason])
+				[Offer_letter_Delay], [Offer_Letter_Delay_Reason], [Salary_Negotiation_Delay], [Salary_Negotiation_Delay_Reason],
+				[First_Round_Drop_Off_Reason], [nd_Round_Drop_Off_Reason], [rd_Round_Drop_Off_Reason],
+				[Background_Verification], [Background_Verification_Drop_Off_Reason])
 			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15,
 				@p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29,
-				@p30, @p31, @p32, @p33, @p34, @p35)
+				@p30, @p31, @p32, @p33, @p34, @p35, @p36, @p37, @p38, @p39, @p40)
 		OUTPUT INSERTED.[Id];`
 
 	auditScore := parseFloat(app.CallAuditScore)
@@ -133,6 +140,11 @@ func CreateApplication(c *gin.Context) {
 		app.OfferLetterDelayReason,
 		app.SalaryNegotiationDelay,
 		app.SalaryNegotiationDelayReason,
+		app.FirstRoundDropOffReason,
+		app.SecondRoundDropOffReason,
+		app.ThirdRoundDropOffReason,
+		app.BackgroundVerification,
+		app.BackgroundVerificationDropOffReason,
 	).Scan(&newID)
 
 	if err != nil {
@@ -325,6 +337,8 @@ func GetApplications(c *gin.Context) {
 		a.[n_Round_Delay], a.[n_Round_Delay_Reason], a.[rd_Round_Delay], a.[rd_Round_Delay_Reason],
 		a.[Breakup_Delay], a.[Breakup_Delay_Reason], a.[Delay], a.[Delay_Reason], a.[Designation_Delay],
 		a.[Offer_letter_Delay], a.[Offer_Letter_Delay_Reason], a.[Salary_Negotiation_Delay], a.[Salary_Negotiation_Delay_Reason],
+		a.[First_Round_Drop_Off_Reason], a.[nd_Round_Drop_Off_Reason], a.[rd_Round_Drop_Off_Reason],
+		a.[Background_Verification], a.[Background_Verification_Drop_Off_Reason],
 		a.[Call_Duration], a.[Performance_Score], a.[Behaviour_Score], a.[Performance_Eval_Details],
 		a.[Behaviour_Eval_Details], a.[Retention_7d_Status], a.[Retention_30d_Status],
 		a.[Is_30d_Failure], a.[Replacement_Required], a.[In_Talent_Bank], a.[Candidate_Attributes],

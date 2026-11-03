@@ -4,9 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { WeeklyReviewService } from '../../../core/services/weekly-review.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { PriorityBadgeComponent } from '../../../shared/components/priority-badge/priority-badge.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-weekly-review-actions',
@@ -16,9 +14,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     RouterModule,
     FormsModule,
     PageHeaderComponent,
-    PriorityBadgeComponent,
     StatusBadgeComponent,
-    IconComponent
   ],
   template: `
     <div class="app-page-container">

@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PositionService } from '../../../core/services/position.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { DEPARTMENTS, RECRUITERS_LIST } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { Position } from '../../../core/models/recruitment.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -285,7 +285,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Departments</option>
-              <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
+              <option *ngFor="let d of departments()" [value]="d">{{ d }}</option>
             </select>
           </div>
 
@@ -325,7 +325,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Owners</option>
-              <option *ngFor="let r of recruiters" [value]="r.name">{{ r.name }}</option>
+              <option *ngFor="let r of recruiters()" [value]="r.recruiter_name">{{ r.recruiter_name }}</option>
             </select>
           </div>
         </div>
@@ -355,9 +355,10 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
 export class DashboardControlTowerComponent {
   positionService = inject(PositionService);
   private toastService = inject(ToastService);
+  private lookups = inject(RecruitmentLookupsService);
 
-  departments = DEPARTMENTS;
-  recruiters = RECRUITERS_LIST;
+  departments = this.lookups.departments;
+  recruiters = this.lookups.recruiters;
 
   searchTerm = signal('');
   selectedDepartment = signal('ALL');

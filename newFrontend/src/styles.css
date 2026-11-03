@@ -51,6 +51,14 @@ table thead th {
   overflow: hidden;
 }
 
+.app-shell-main:has(app-candidate-pipeline-stages) {
+  padding: 0.75rem !important;
+}
+
+.candidate-pipeline-container {
+  height: clamp(28rem, calc(100dvh - 21rem), 42rem);
+}
+
 .app-shell-main > router-outlet + * {
   display: block;
   flex: 1 1 auto;
@@ -61,10 +69,33 @@ table thead th {
 
 /* Keep page scrolling locked; data rows scroll inside their table viewport. */
 .app-shell-main .overflow-x-auto:has(> table) {
-  max-height: calc(100dvh - 20rem);
+  max-height: calc(100dvh - 23rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+}
+
+.app-shell-main .overflow-x-auto.dashboard-requisitions-viewport:has(> table) {
+  max-height: calc(100dvh - 23rem);
+}
+
+@media (max-width: 1023px) {
+  .app-shell-main:has(app-dashboard-overview) {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .app-shell-main:has(app-dashboard-overview) > router-outlet + app-dashboard-overview {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .app-shell-main .overflow-x-auto.dashboard-requisitions-viewport:has(> table) {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 .app-shell-main .overflow-x-auto:has(> table) thead {

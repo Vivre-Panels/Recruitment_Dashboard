@@ -7,19 +7,17 @@ import { PositionService } from '../../../core/services/position.service';
 import { CandidateService } from '../../../core/services/candidate.service';
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { RecruiterService } from '../../../core/services/recruiter.service';
-import { DEPARTMENTS, RECRUITERS_LIST } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { Position } from '../../../core/models/recruitment.model';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { PriorityBadgeComponent } from '../../../shared/components/priority-badge/priority-badge.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { ViewSwitcherTabsComponent, ViewTab } from '../../../shared/components/view-switcher/view-switcher-tabs.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
-import { DragScrollDirective } from '../../../shared/directives/drag-scroll.directive';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -32,50 +30,39 @@ import { environment } from '../../../../environments/environment';
     KpiCardComponent,
     StatusBadgeComponent,
     PriorityBadgeComponent,
-    PageHeaderComponent,
     SearchInputComponent,
     IconComponent,
     EmptyStateComponent,
     DrawerComponent,
     ViewSwitcherTabsComponent,
-    LoadingStateComponent,
-    DragScrollDirective
+    LoadingStateComponent
   ],
   template: `
-    <div class="space-y-6 max-w-7xl mx-auto">
-      <!-- Page Header with View Switcher Tabs -->
-      <app-page-header
-        title="Recruitment Dashboard"
-      >
-        <div actions class="flex flex-wrap items-center gap-3">
-          <app-view-switcher-tabs [tabs]="dashboardTabs"></app-view-switcher-tabs>
+    <div class="space-y-4 max-w-7xl w-full mx-auto">
+      <!-- Dashboard view controls -->
+      <div class="flex flex-wrap justify-end items-center gap-2">
+        <app-view-switcher-tabs [tabs]="dashboardTabs"></app-view-switcher-tabs>
 
-          <button
-            type="button"
-            (click)="isFilterDrawerOpen = true"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-colors cursor-pointer"
-          >
-            <app-icon name="filter" [size]="14" class="text-brand-600"></app-icon>
-            Filters
-            <span *ngIf="activeFilterCount() > 0" class="w-4.5 h-4.5 rounded-full bg-brand-500 text-white text-[10px] flex items-center justify-center font-bold">
-              {{ activeFilterCount() }}
-            </span>
-          </button>
-        </div>
-      </app-page-header>
+        <button
+          type="button"
+          (click)="isFilterDrawerOpen = true"
+          class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-brand-50 hover:border-brand-200 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-colors cursor-pointer"
+        >
+          <app-icon name="filter" [size]="14" class="text-brand-600"></app-icon>
+          Filters
+          <span *ngIf="activeFilterCount() > 0" class="w-4.5 h-4.5 rounded-full bg-brand-500 text-white text-[10px] flex items-center justify-center font-bold">
+            {{ activeFilterCount() }}
+          </span>
+        </button>
+      </div>
 
       <!-- Skeleton KPI Grid -->
       <app-loading-state *ngIf="positionService.isLoading()" type="kpis"></app-loading-state>
 
-      <!-- 6 Executive KPI Cards in Horizontal Scroll Container (Draggable) -->
-      <div *ngIf="!positionService.isLoading()" appDragScroll class="flex flex-nowrap overflow-x-auto gap-4 pb-3.5 pt-0.5 custom-scrollbar snap-x scroll-smooth cursor-grab active:cursor-grabbing">
+      <!-- Executive KPI Cards -->
+      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         <!-- 1. Pipeline Breakdown -->
-        <div class="relative group cursor-pointer min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start" (click)="openPipelineModal()">
-          <!-- Live Pulse Beacon -->
-          <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-brand-500 border-2 border-white"></span>
-          </span>
+        <div class="group cursor-pointer min-w-0" (click)="openPipelineModal()">
           <app-kpi-card
             title="Pipeline Breakdown"
             value="Hiring Insights"
@@ -83,24 +70,20 @@ import { environment } from '../../../../environments/environment';
             [showArrow]="true"
             icon="pie-chart"
             accent="brand"
-            class="block transition-all duration-300 hover:scale-[1.02] hover:shadow-brand-500/20"
+            class="block transition-all duration-200 hover:-translate-y-0.5"
           ></app-kpi-card>
         </div>
 
         <!-- 2. Recruiter Wise Insight -->
-        <div class="relative group cursor-pointer min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start" (click)="openRecruiterInsightModal()">
-          <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5 z-20">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500 border-2 border-white"></span>
-          </span>
+        <div class="group cursor-pointer min-w-0" (click)="openRecruiterInsightModal()">
           <app-kpi-card
             title="Recruiter Wise Insight"
-            [value]="(recruiterService.avgOverallScore() || 85) + '%'"
+            [value]="recruiterService.totalRecruiters() ? recruiterService.avgOverallScore() + '%' : '—'"
             unit="Avg Score"
             subtitle="Click to view breakdown"
             [showArrow]="true"
             icon="user-check"
-            [trend]="(recruiterService.topPerformers().length || 3) + ' Top Performers'"
+            [trend]="recruiterService.topPerformers().length + ' Top Performers'"
             [trendPositive]="true"
             accent="brand"
             class="block transition-all duration-300 hover:scale-[1.02] hover:shadow-brand-500/20"
@@ -108,7 +91,7 @@ import { environment } from '../../../../environments/environment';
         </div>
 
         <!-- 3. Required HC -->
-        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+        <div class="min-w-0">
           <app-kpi-card
             title="Required HC"
             [value]="positionService.totalRequiredHc()"
@@ -120,7 +103,7 @@ import { environment } from '../../../../environments/environment';
         </div>
 
         <!-- 4. Joined -->
-        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+        <div class="min-w-0">
           <app-kpi-card
             title="Joined"
             [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
@@ -133,21 +116,21 @@ import { environment } from '../../../../environments/environment';
         </div>
 
         <!-- 5. Successful Hires -->
-        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+        <div class="min-w-0">
           <app-kpi-card
             title="Successful Hires"
             [value]="analyticsService.totalJoined() || positionService.totalJoinedHc()"
             unit="Hires"
             subtitle="Passed 30-day retention index"
             icon="award"
-            [trend]="(analyticsService.avgRetention30Days() || 100) + '% Yield'"
+            [trend]="analyticsService.totalJoined() ? analyticsService.avgRetention30Days() + '% Yield' : 'No retention data'"
             [trendPositive]="true"
             accent="brand"
           ></app-kpi-card>
         </div>
 
         <!-- 6. At Risk / Critical -->
-        <div class="min-w-[250px] md:min-w-[270px] flex-shrink-0 flex-1 snap-start">
+        <div class="min-w-0">
           <app-kpi-card
             title="At Risk / Critical"
             [value]="positionService.positionsAtRiskCount() + positionService.positionsCriticalCount()"
@@ -159,140 +142,82 @@ import { environment } from '../../../../environments/environment';
         </div>
       </div>
 
-      <!-- Attention Required List -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs">
-        <app-loading-state *ngIf="positionService.isLoading()" type="table" [rows]="4"></app-loading-state>
-
-        <div *ngIf="!positionService.isLoading()">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+      <!-- Recruitment Progress & Requisitions Table -->
+      <div class="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
+        <!-- Table Toolbar -->
+        <div class="px-4 py-3 border-b border-slate-200 flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto] sm:items-center gap-3 bg-white">
           <div>
-            <h2 class="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-              Attention Required Positions
-            </h2>
+            <h3 class="text-sm font-bold text-slate-900 tracking-tight">Active Requisitions</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">{{ filteredRequisitions().length }} requisitions</p>
           </div>
 
-          <a 
-            routerLink="/recruitment/requisitions" 
-            class="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+          <app-search-input
+            [value]="searchTerm"
+            (valueChange)="searchTerm = $event"
+            placeholder="Search position title, owner..."
+          ></app-search-input>
+          <a
+            routerLink="/recruitment/requisitions"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-brand-600 bg-brand-600 text-xs font-bold text-white whitespace-nowrap transition-colors hover:bg-brand-700 hover:border-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
           >
             View All Requisitions →
           </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div 
-            *ngFor="let pos of attentionPositions()"
-            (click)="openDrawer(pos)"
-            class="p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden select-none h-44"
-            [ngClass]="pos.status === 'Critical' ? 'bg-rose-50/70 border-rose-200/90 hover:border-rose-300' : 'bg-amber-50/70 border-amber-200/90 hover:border-amber-300'"
-          >
-            <!-- Non-Colliding Watermark Icon -->
-            <div 
-              class="absolute -right-2 -bottom-2 pointer-events-none transition-transform duration-500 group-hover:scale-110 opacity-[0.08]"
-              [ngClass]="pos.status === 'Critical' ? 'text-red-700' : 'text-amber-700'"
-            >
-              <app-icon name="alert-triangle" [size]="85"></app-icon>
-            </div>
-
-            <!-- Top Row Badges -->
-            <div class="flex items-center justify-between relative z-10">
-              <app-priority-badge [priority]="pos.priority"></app-priority-badge>
-              <app-status-badge [status]="pos.status"></app-status-badge>
-            </div>
-
-            <!-- Title & Info -->
-            <div class="my-auto relative z-10">
-              <h3 class="text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors leading-snug truncate" [title]="pos.title">{{ pos.title }}</h3>
-              <p class="text-[11px] text-slate-600 font-semibold mt-1">
-                {{ pos.department }} • Target: <span class="font-mono font-bold text-slate-800">{{ pos.targetDate }}</span>
-              </p>
-            </div>
-
-            <!-- Bottom Row: Progress & Action Link -->
-            <div class="pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[11px] relative z-10">
-              <span class="text-slate-600 font-medium">Joined: <strong class="text-slate-900 font-mono">{{ pos.joinedHc }}/{{ pos.requiredHc }}</strong></span>
-              <span class="text-brand-700 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                View Details
-                <app-icon name="arrow-right" [size]="12"></app-icon>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recruitment Progress & Requisitions Table -->
-      <div class="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
-        <!-- Table Toolbar -->
-        <div class="p-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 tracking-tight">Active Requisitions</h3>
-            <p class="text-xs text-slate-500">Overview of active vacancies with quick view drawers</p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <app-search-input
-              [value]="searchTerm"
-              (valueChange)="searchTerm = $event"
-              placeholder="Search position title, owner..."
-            ></app-search-input>
-          </div>
-        </div>
-
         <!-- Table -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs">
+        <div class="overflow-x-auto dashboard-requisitions-viewport">
+          <table class="w-full min-w-[820px] text-left border-collapse text-xs">
             <thead>
-              <tr class="border-b border-slate-200/80 bg-slate-50/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                <th class="py-3.5 px-4">Position</th>
-                <th class="py-3.5 px-3">Department</th>
-                <th class="py-3.5 px-3">Team</th>
-                <th class="py-3.5 px-3 text-center">Priority</th>
-                <th class="py-3.5 px-3 text-center">Progress</th>
-                <th class="py-3.5 px-3">Target Date</th>
-                <th class="py-3.5 px-3 text-center">Status</th>
+              <tr class="border-b border-slate-200 bg-slate-100 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                <th class="py-2.5 px-4">Position</th>
+                <th class="py-2.5 px-3">Department</th>
+                <th class="py-2.5 px-3">Team</th>
+                <th class="py-2.5 px-3 text-center">Priority</th>
+                <th class="py-2.5 px-3 text-center">Progress</th>
+                <th class="py-2.5 px-3">Target Date</th>
+                <th class="py-2.5 px-3 text-center">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr 
                 *ngFor="let pos of filteredRequisitions()"
                 (click)="openDrawer(pos)"
-                class="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                class="hover:bg-brand-50/50 transition-colors cursor-pointer group"
               >
                 <!-- Position -->
-                <td class="py-3.5 px-4 font-medium text-slate-900">
-                  <div class="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">{{ pos.title }}</div>
-                  <div class="text-[11px] text-slate-500 mt-0.5">Owner: <strong class="text-slate-700">{{ pos.owner }}</strong></div>
+                <td class="py-2.5 px-4 font-medium text-slate-900">
+                  <div class="max-w-[300px] truncate font-bold text-slate-900 group-hover:text-brand-600 transition-colors" [title]="pos.title">{{ pos.title }}</div>
+                  <div class="max-w-[300px] truncate text-[11px] text-slate-500 mt-0.5" [title]="pos.owner">Owner: <strong class="text-slate-700">{{ pos.owner }}</strong></div>
                 </td>
 
                 <!-- Department -->
-                <td class="py-3.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
+                <td class="py-2.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
                   {{ pos.department }}
                 </td>
 
                 <!-- Team -->
-                <td class="py-3.5 px-3 font-medium text-slate-600 whitespace-nowrap">
+                <td class="py-2.5 px-3 font-medium text-slate-600 whitespace-nowrap">
                   {{ pos.team || '—' }}
                 </td>
 
                 <!-- Priority -->
-                <td class="py-3.5 px-3 text-center">
+                <td class="py-2.5 px-3 text-center">
                   <app-priority-badge [priority]="pos.priority"></app-priority-badge>
                 </td>
 
                 <!-- Progress -->
-                <td class="py-3.5 px-3 text-center font-bold">
+                <td class="py-2.5 px-3 text-center font-bold">
                   <span class="text-emerald-700 font-mono text-xs">{{ pos.joinedHc }}</span>
                   <span class="text-slate-400 font-mono text-xs">/{{ pos.requiredHc }} hired</span>
                 </td>
 
                 <!-- Target -->
-                <td class="py-3.5 px-3 font-mono text-[11px] text-slate-600 whitespace-nowrap font-medium">
+                <td class="py-2.5 px-3 font-mono text-[11px] text-slate-600 whitespace-nowrap font-medium">
                   {{ pos.targetDate }}
                 </td>
 
                 <!-- Status -->
-                <td class="py-3.5 px-3 text-center">
+                <td class="py-2.5 px-3 text-center">
                   <app-status-badge [status]="pos.status"></app-status-badge>
                 </td>
               </tr>
@@ -306,7 +231,6 @@ import { environment } from '../../../../environments/environment';
             [message]="requisitionLoadError() || 'No database requisitions match the current search and filters.'"
           ></app-empty-state>
         </div>
-      </div>
       </div>
 
       <!-- Slide-Over Drawer -->
@@ -393,7 +317,7 @@ import { environment } from '../../../../environments/environment';
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Departments</option>
-              <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
+              <option *ngFor="let d of departments()" [value]="d">{{ d }}</option>
             </select>
           </div>
 
@@ -417,7 +341,7 @@ import { environment } from '../../../../environments/environment';
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-800"
             >
               <option value="ALL">All Recruiters</option>
-              <option *ngFor="let r of recruiters" [value]="r.name">{{ r.name }}</option>
+              <option *ngFor="let r of recruiters()" [value]="r.recruiter_name">{{ r.recruiter_name }}</option>
             </select>
           </div>
         </div>
@@ -442,309 +366,6 @@ import { environment } from '../../../../environments/environment';
         </div>
       </app-drawer>
 
-      <!-- Pipeline Breakdown Modal -->
-      <div *ngIf="isPipelineModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col relative">
-          <!-- Modal Header -->
-          <div class="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-30 rounded-t-2xl">
-            <div>
-              <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                <app-icon name="pie-chart" [size]="18" class="text-brand-600"></app-icon>
-                Candidate Pipeline Stages
-              </h2>
-              <p class="text-xs text-slate-500 mt-0.5">Filter by position to view 8-stage candidate counts</p>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <!-- Searchbar + Dropdown Combo -->
-              <div class="relative min-w-[260px] sm:min-w-[300px]">
-                <div class="relative flex items-center h-9">
-                  <div class="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none z-10 text-slate-400">
-                    <app-icon name="search" [size]="14"></app-icon>
-                  </div>
-                  <input
-                    type="text"
-                    [ngModel]="pipelineSearchQuery()"
-                    (ngModelChange)="pipelineSearchQuery.set($event); isPipelineDropdownOpen.set(true)"
-                    (focus)="isPipelineDropdownOpen.set(true)"
-                    placeholder="Search position or select..."
-                    class="w-full pl-9 pr-9 h-full bg-white border border-brand-300 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 leading-normal"
-                  />
-                  <button
-                    *ngIf="pipelineSearchQuery() || selectedPipelineFilter()"
-                    type="button"
-                    (click)="clearPipelineFilter()"
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 cursor-pointer flex items-center justify-center z-10 transition-colors"
-                  >
-                    <app-icon name="x" [size]="12"></app-icon>
-                  </button>
-                </div>
-
-                <!-- Floating Dropdown Menu -->
-                <div
-                  *ngIf="isPipelineDropdownOpen()"
-                  class="absolute left-0 w-full min-w-[280px] sm:min-w-[320px] mt-1.5 bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] max-h-64 overflow-y-auto py-1 text-xs divide-y divide-slate-100"
-                >
-                  <div class="py-1">
-                    <button
-                      type="button"
-                      (click)="selectPipelinePosition('')"
-                      class="w-full text-left px-4 py-2 font-medium hover:bg-slate-50 text-slate-500 cursor-pointer flex items-center justify-between"
-                      [class.bg-slate-50]="selectedPipelineFilter() === ''"
-                    >
-                      <span>-- Select Position --</span>
-                      <app-icon *ngIf="selectedPipelineFilter() === ''" name="check" [size]="12" class="text-slate-400"></app-icon>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="selectPipelinePosition('ALL')"
-                      class="w-full text-left px-4 py-2 font-bold hover:bg-brand-50 text-brand-700 cursor-pointer flex items-center justify-between"
-                      [class.bg-brand-50]="selectedPipelineFilter() === 'ALL'"
-                    >
-                      <span>All Positions</span>
-                      <app-icon *ngIf="selectedPipelineFilter() === 'ALL'" name="check" [size]="12" class="text-brand-600"></app-icon>
-                    </button>
-                  </div>
-
-                  <div class="py-1">
-                    <div *ngIf="filteredPositionOptions().length === 0" class="px-4 py-2.5 text-slate-400 italic text-[11px]">
-                      No matching positions found
-                    </div>
-                    <button
-                      *ngFor="let pos of filteredPositionOptions()"
-                      type="button"
-                      (click)="selectPipelinePosition(pos)"
-                      class="w-full text-left px-4 py-2 font-medium hover:bg-brand-50 text-slate-800 hover:text-brand-700 cursor-pointer flex items-center justify-between transition-colors"
-                      [class.bg-brand-50]="selectedPipelineFilter() === pos"
-                      [class.font-bold]="selectedPipelineFilter() === pos"
-                    >
-                      <span class="truncate pr-2">{{ pos }}</span>
-                      <app-icon *ngIf="selectedPipelineFilter() === pos" name="check" [size]="12" class="text-brand-600 shrink-0 ml-2"></app-icon>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Close Modal Button -->
-              <button
-                type="button"
-                (click)="isPipelineModalOpen = false; isPipelineDropdownOpen.set(false)"
-                class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
-              >
-                <app-icon name="x" [size]="18"></app-icon>
-              </button>
-            </div>
-          </div>
-
-          <!-- Modal Body -->
-          <div class="p-6 overflow-y-auto flex-1 flex flex-col min-h-[300px]">
-            <!-- Case 1: No Filter Selected (Empty Placeholder) -->
-            <div *ngIf="!selectedPipelineFilter()" class="my-auto py-8">
-              <app-empty-state
-                title="Select Filter to View Data"
-                message="Please select a position or requisition from the dropdown filter above to display candidate stage counts."
-                icon="filter"
-              ></app-empty-state>
-            </div>
-
-            <!-- Case 2: Filter Selected - 9 Stage Count Tiles Grid (3x3 Grid) -->
-            <div *ngIf="selectedPipelineFilter()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div
-                *ngFor="let stage of pipelineStageConfigs"
-                class="p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-md flex flex-col justify-between"
-                [ngClass]="stage.bgClass + ' ' + stage.borderClass"
-              >
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">{{ stage.num }}. {{ stage.label }}</span>
-                  <span class="p-2 rounded-xl text-sm" [ngClass]="stage.iconBgClass">
-                    <app-icon [name]="stage.icon" [size]="16"></app-icon>
-                  </span>
-                </div>
-                <div class="text-3xl font-extrabold font-mono" [ngClass]="stage.textClass">
-                  {{ getStageCount(stage.key) }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recruiter Wise Monthly Insight Modal -->
-      <div *ngIf="isRecruiterInsightModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col relative overflow-hidden">
-          <!-- Modal Header -->
-          <div class="p-5 border-b border-slate-100 bg-slate-50/90 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold">
-                <app-icon name="award" [size]="20"></app-icon>
-              </div>
-              <div>
-                <h2 class="text-base font-bold text-slate-900 tracking-tight">Recruiter Wise Monthly Insight</h2>
-                <p class="text-xs text-slate-500">Real-time database performance breakdown across 8 recruitment funnel stages</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              (click)="isRecruiterInsightModalOpen = false"
-              class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-            >
-              <app-icon name="x" [size]="18"></app-icon>
-            </button>
-          </div>
-
-          <!-- Subheader Filter Bar (Non-mandatory & Chained) -->
-          <div class="px-6 py-3.5 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center gap-3">
-            <!-- Recruiter Name Dropdown -->
-            <div class="flex-1 min-w-[170px]">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Recruiter Name</label>
-              <select
-                [ngModel]="insightRecruiterFilter()"
-                (ngModelChange)="onInsightRecruiterChange($event)"
-                class="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
-              >
-                <option value="ALL">All Recruiters</option>
-                <option *ngFor="let rec of insightFilterOptions().recruiters" [value]="rec">{{ rec }}</option>
-              </select>
-            </div>
-
-            <!-- Position Dropdown -->
-            <div class="flex-1 min-w-[170px]">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Position</label>
-              <select
-                [ngModel]="insightPositionFilter()"
-                (ngModelChange)="onInsightPositionChange($event)"
-                class="w-full h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
-              >
-                <option value="ALL">All Positions</option>
-                <option *ngFor="let pos of insightFilterOptions().positions" [value]="pos">{{ pos }}</option>
-              </select>
-            </div>
-
-            <!-- Date Range Picker -->
-            <div class="flex items-center gap-2 min-w-[260px]">
-              <div class="flex-1">
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">From Date</label>
-                <input
-                  type="date"
-                  [ngModel]="insightFromDate()"
-                  (ngModelChange)="onInsightFromDateChange($event)"
-                  class="w-full h-9 px-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-              <div class="flex-1">
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">To Date</label>
-                <input
-                  type="date"
-                  [ngModel]="insightToDate()"
-                  (ngModelChange)="onInsightToDateChange($event)"
-                  class="w-full h-9 px-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-            </div>
-
-            <!-- Reset / Clear Filters -->
-            <div class="flex items-end self-end mb-0.5">
-              <button
-                type="button"
-                (click)="clearInsightFilters()"
-                class="h-9 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <app-icon name="rotate-ccw" [size]="13"></app-icon>
-                Reset
-              </button>
-            </div>
-          </div>
-
-          <!-- Modal Body -->
-          <div class="p-6 overflow-y-auto space-y-4 flex-1 flex flex-col min-h-[350px]">
-            <!-- Loading Indicator -->
-            <div *ngIf="isInsightLoading()" class="my-auto py-12 flex items-center justify-center text-slate-500 text-xs font-semibold gap-2">
-              <span class="w-4 h-4 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></span>
-              Loading recruiter insights from database...
-            </div>
-
-            <!-- Recruiter insight breakdown table -->
-            <div *ngIf="!isInsightLoading()" class="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs bg-white flex-1">
-              <table class="w-full text-left text-xs whitespace-nowrap">
-                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[11px]">
-                  <tr>
-                    <th class="py-3.5 px-4 sticky left-0 bg-slate-50 z-10 border-r border-slate-200">Recruiter Name</th>
-                    <th class="py-3.5 px-4 border-r border-slate-100">Department</th>
-                    <th class="py-3.5 px-4 border-r border-slate-100">Position</th>
-                    <th class="py-3.5 px-4 border-r border-slate-100">Open Date</th>
-                    <th class="py-3.5 px-4 border-r border-slate-100">Target Date</th>
-                    <th class="py-3.5 px-3 text-center bg-blue-50/40 text-blue-800">CV Sourced</th>
-                    <th class="py-3.5 px-3 text-center bg-purple-50/40 text-purple-800">Approved</th>
-                    <th class="py-3.5 px-3 text-center bg-sky-50/40 text-sky-800">Interviewed</th>
-                    <th class="py-3.5 px-3 text-center bg-emerald-50/40 text-emerald-800">Selected</th>
-                    <th class="py-3.5 px-3 text-center bg-indigo-50/40 text-indigo-800">Offered</th>
-                    <th class="py-3.5 px-3 text-center bg-teal-50/40 text-teal-800">Accepted</th>
-                    <th class="py-3.5 px-3 text-center bg-green-50/50 text-green-900">Joined</th>
-                    <th class="py-3.5 px-3 text-center bg-amber-50/60 text-amber-900">15 Days Retention</th>
-                    <th class="py-3.5 px-3 text-center bg-brand-50/60 text-brand-900">30 Days Retention</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr *ngFor="let row of insightData()" class="hover:bg-slate-50/80 transition-colors">
-                    <td class="py-3.5 px-4 font-bold text-slate-900 sticky left-0 bg-white border-r border-slate-100 shadow-2xs">
-                      {{ row.recruiter_name }}
-                    </td>
-                    <td class="py-3.5 px-4 font-semibold text-slate-700 border-r border-slate-100">{{ row.department || '-' }}</td>
-                    <td class="py-3.5 px-4 font-semibold text-slate-700 border-r border-slate-100">{{ row.position }}</td>
-                    <td class="py-3.5 px-4 font-mono text-slate-600 border-r border-slate-100">{{ row.open_date || '-' }}</td>
-                    <td class="py-3.5 px-4 font-mono text-slate-600 border-r border-slate-100">{{ row.target_date || '-' }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-blue-700 bg-blue-50/20">{{ row.cv_sourced }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-purple-700 bg-purple-50/20">{{ row.approved }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-sky-700 bg-sky-50/20">{{ row.interviewed }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-emerald-700 bg-emerald-50/20">{{ row.selected }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-indigo-700 bg-indigo-50/20">{{ row.offered }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-teal-700 bg-teal-50/20">{{ row.accepted }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-bold text-green-700 bg-green-50/30">{{ row.joined }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-extrabold text-amber-700 bg-amber-50/40">{{ row.retention_15d ?? '-' }}</td>
-                    <td class="py-3.5 px-3 text-center font-mono font-extrabold text-brand-700 bg-brand-50/40">{{ row.retention_30d ?? '-' }}</td>
-                  </tr>
-                  <tr *ngIf="insightData().length === 0">
-                    <td colspan="14" class="py-12 text-center text-slate-400 font-medium">
-                      No recruitment data matching current filter criteria.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Bottleneck Toast Notification at Bottom of Table -->
-            <div *ngIf="hasBottleneckAlert()" class="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 shadow-xs animate-fadeIn shrink-0 mt-2">
-              <div class="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5">
-                <app-icon name="alert-triangle" [size]="18"></app-icon>
-              </div>
-              <div class="text-xs">
-                <span class="font-bold text-amber-900 uppercase tracking-wide block flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  Database Bottleneck Reason Flagged
-                </span>
-                <span class="text-amber-800 font-medium mt-1 block leading-relaxed">
-                  {{ activeBottleneckReasons() }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Modal Footer -->
-          <div class="p-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
-            <span class="text-xs text-slate-500 font-medium">
-              Showing {{ insightData().length }} database response records
-            </span>
-            <button
-              type="button"
-              (click)="isRecruiterInsightModalOpen = false"
-              class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   `
 })
 export class DashboardOverviewComponent {
@@ -753,6 +374,7 @@ export class DashboardOverviewComponent {
   candidateService = inject(CandidateService);
   analyticsService = inject(AnalyticsService);
   recruiterService = inject(RecruiterService);
+  private lookups = inject(RecruitmentLookupsService);
   private router = inject(Router);
 
   activeRequisitions = signal<Position[]>([]);
@@ -826,8 +448,8 @@ export class DashboardOverviewComponent {
     { label: 'Control Tower Grid', icon: 'tower', route: '/dashboard/control-tower' }
   ];
 
-  departments = DEPARTMENTS;
-  recruiters = RECRUITERS_LIST;
+  departments = this.lookups.departments;
+  recruiters = this.lookups.recruiters;
 
   searchTerm = '';
   selectedDepartment = 'ALL';
@@ -838,213 +460,13 @@ export class DashboardOverviewComponent {
   selectedDrawerPosition?: Position;
 
   isFilterDrawerOpen = false;
-  isRecruiterInsightModalOpen = false;
-
-  insightRecruiterFilter = signal<string>('ALL');
-  insightPositionFilter = signal<string>('ALL');
-  insightFromDate = signal<string>('');
-  insightToDate = signal<string>('');
-
-  insightData = signal<any[]>([]);
-  insightFilterOptions = signal<{ recruiters: string[]; positions: string[] }>({ recruiters: [], positions: [] });
-  isInsightLoading = signal<boolean>(false);
-
   openRecruiterInsightModal() {
-    this.isRecruiterInsightModalOpen = true;
-    this.loadInsightData();
+    this.router.navigate(['/dashboard/recruiter-insights']);
   }
-
-  loadInsightData() {
-    this.isInsightLoading.set(true);
-    this.recruiterService.getRecruiterInsights({
-      recruiter: this.insightRecruiterFilter(),
-      position: this.insightPositionFilter(),
-      from: this.insightFromDate(),
-      to: this.insightToDate()
-    }).subscribe(res => {
-      this.isInsightLoading.set(false);
-      if (res && res.success) {
-        this.insightData.set(res.data || []);
-        if (res.filter_options) {
-          this.insightFilterOptions.set(res.filter_options);
-        }
-      }
-    });
-  }
-
-  onInsightRecruiterChange(val: string) {
-    this.insightRecruiterFilter.set(val);
-    this.loadInsightData();
-  }
-
-  onInsightPositionChange(val: string) {
-    this.insightPositionFilter.set(val);
-    this.loadInsightData();
-  }
-
-  onInsightFromDateChange(val: string) {
-    this.insightFromDate.set(val);
-    this.loadInsightData();
-  }
-
-  onInsightToDateChange(val: string) {
-    this.insightToDate.set(val);
-    this.loadInsightData();
-  }
-
-  clearInsightFilters() {
-    this.insightRecruiterFilter.set('ALL');
-    this.insightPositionFilter.set('ALL');
-    this.insightFromDate.set('');
-    this.insightToDate.set('');
-    this.loadInsightData();
-  }
-
-  hasBottleneckAlert = computed(() => {
-    return this.insightData().some(item => !!item.bottleneck_reason);
-  });
-
-  activeBottleneckReasons = computed(() => {
-    const reasons = this.insightData()
-      .filter(item => !!item.bottleneck_reason)
-      .map(item => `${item.recruiter_name} (${item.position}): ${item.bottleneck_reason}`);
-    return reasons.join(' | ');
-  });
-
-  isPipelineModalOpen = false;
-  selectedPipelineFilter = signal<string>('');
-  isPipelineDropdownOpen = signal<boolean>(false);
-  pipelineSearchQuery = signal<string>('');
-
-  filteredPositionOptions = computed(() => {
-    const q = this.pipelineSearchQuery().toLowerCase().trim();
-    const list = this.positionOptions();
-    if (!q) return list;
-    return list.filter(p => p.toLowerCase().includes(q));
-  });
-
-  pipelineStageConfigs = [
-    { key: 'sourced', label: 'Sourced', num: '1', icon: 'users', bgClass: 'bg-blue-50/60', borderClass: 'border-blue-200', textClass: 'text-blue-700', iconBgClass: 'bg-blue-100 text-blue-700' },
-    { key: 'screening', label: 'Screening', num: '2', icon: 'filter', bgClass: 'bg-purple-50/60', borderClass: 'border-purple-200', textClass: 'text-purple-700', iconBgClass: 'bg-purple-100 text-purple-700' },
-    { key: 'interviewed', label: 'Interviewed', num: '3', icon: 'activity', bgClass: 'bg-sky-50/60', borderClass: 'border-sky-200', textClass: 'text-sky-700', iconBgClass: 'bg-sky-100 text-sky-700' },
-    { key: 'pipeline', label: 'Pipeline', num: '4', icon: 'kanban', bgClass: 'bg-indigo-50/60', borderClass: 'border-indigo-200', textClass: 'text-indigo-700', iconBgClass: 'bg-indigo-100 text-indigo-700' },
-    { key: 'in_progress', label: 'In Progress', num: '5', icon: 'clock', bgClass: 'bg-amber-50/60', borderClass: 'border-amber-200', textClass: 'text-amber-700', iconBgClass: 'bg-amber-100 text-amber-700' },
-    { key: 'shortlisted', label: 'Shortlisted', num: '6', icon: 'sparkles', bgClass: 'bg-emerald-50/60', borderClass: 'border-emerald-200', textClass: 'text-emerald-700', iconBgClass: 'bg-emerald-100 text-emerald-700' },
-    { key: 'follow_up', label: 'Follow Up', num: '7', icon: 'phone', bgClass: 'bg-yellow-50/60', borderClass: 'border-yellow-200', textClass: 'text-yellow-700', iconBgClass: 'bg-yellow-100 text-yellow-700' },
-    { key: 'rejected', label: 'Rejected', num: '8', icon: 'x', bgClass: 'bg-rose-50/60', borderClass: 'border-rose-200', textClass: 'text-rose-700', iconBgClass: 'bg-rose-100 text-rose-700' },
-    { key: 'hired', label: 'Hired', num: '9', icon: 'check-circle', bgClass: 'bg-green-50/60', borderClass: 'border-green-200', textClass: 'text-green-700', iconBgClass: 'bg-green-100 text-green-700' },
-  ];
-
-  positionOptions = computed(() => {
-    const titles = new Set<string>();
-    for (const p of this.positionService.positions()) {
-      if (p.title) titles.add(p.title);
-    }
-    for (const c of this.candidateService.candidates()) {
-      if (c.positionTitle) titles.add(c.positionTitle);
-    }
-    return Array.from(titles).sort();
-  });
-
-  pipelineStageCounts = computed(() => {
-    const filter = this.selectedPipelineFilter();
-    const counts = {
-      sourced: 0,
-      screening: 0,
-      interviewed: 0,
-      pipeline: 0,
-      in_progress: 0,
-      shortlisted: 0,
-      follow_up: 0,
-      rejected: 0,
-      hired: 0
-    };
-
-    if (!filter) return counts;
-
-    const filterLower = filter.toLowerCase().trim();
-    const candidates = this.candidateService.candidates().filter(c => {
-      if (filter === 'ALL') return true;
-      const titleLower = (c.positionTitle || '').toLowerCase().trim();
-      return titleLower === filterLower;
-    });
-
-    // Sourced represents the total CV/application count for the position, irrespective of candidate status
-    counts.sourced = candidates.length;
-
-    for (const c of candidates) {
-      // Mandatory Screening Priority Rule:
-      // If TelleCalling_Time IS NOT NULL (and non-empty), MUST count as Screening and STOP further mapping!
-      const tcTime = (c.telleCallingTime || '').trim();
-      if (tcTime !== '' && tcTime !== 'null' && tcTime !== 'undefined') {
-        counts.screening++;
-        continue;
-      }
-
-      // TelleCalling_Time == NULL -> Apply status-based mapping
-      const stage = (c.currentStage || '').toLowerCase().trim();
-      const status = (c.status || '').toLowerCase().trim();
-      const rawStatus = (c.rawStatus || '').toLowerCase().trim();
-      const sRaw = `${stage} ${status} ${rawStatus}`;
-      const sNorm = sRaw.replace(/[\s\-_]+/g, '');
-
-      // Target explicit Future Hireable variants without overly broad includes('future')
-      const isFutureHireable = sNorm.includes('futurehireable') || 
-                               sNorm.includes('futurehirable') || 
-                               /future[\s\-_]*(?:hireable|hirable)/i.test(sRaw);
-
-      if (sNorm.includes('followup')) {
-        counts.follow_up++;
-      } else if (sNorm.includes('reject') || sNorm.includes('drop') || sNorm.includes('unsuitable') || sNorm.includes('notinterested') || isFutureHireable) {
-        counts.rejected++;
-      } else if (sNorm.includes('join') || sNorm.includes('offer') || sNorm.includes('accept') || sNorm.includes('hire') || sNorm.includes('success')) {
-        counts.hired++;
-      } else if (sNorm.includes('round') || sNorm.includes('inprogress') || sNorm.includes('process')) {
-        counts.in_progress++;
-      } else if (sNorm.includes('select') || sNorm.includes('shortlist') || sNorm.includes('approved') || sNorm.includes('telecall')) {
-        counts.shortlisted++;
-      } else if (sNorm.includes('interview') || sNorm.includes('manager')) {
-        counts.interviewed++;
-      } else if (sNorm.includes('screen')) {
-        counts.screening++;
-      } else if (sNorm.includes('pipeline')) {
-        counts.pipeline++;
-      }
-    }
-
-    return counts;
-  });
 
   openPipelineModal() {
-    this.selectedPipelineFilter.set('');
-    this.pipelineSearchQuery.set('');
-    this.isPipelineDropdownOpen.set(false);
-    this.isPipelineModalOpen = true;
+    this.router.navigate(['/dashboard/candidate-pipeline']);
   }
-
-  selectPipelinePosition(pos: string) {
-    this.selectedPipelineFilter.set(pos);
-    if (pos === '') {
-      this.pipelineSearchQuery.set('');
-    } else if (pos === 'ALL') {
-      this.pipelineSearchQuery.set('All Positions');
-    } else {
-      this.pipelineSearchQuery.set(pos);
-    }
-    this.isPipelineDropdownOpen.set(false);
-  }
-
-  clearPipelineFilter() {
-    this.selectedPipelineFilter.set('');
-    this.pipelineSearchQuery.set('');
-    this.isPipelineDropdownOpen.set(true);
-  }
-
-  getStageCount(key: string): number {
-    const counts = this.pipelineStageCounts() as Record<string, number>;
-    return counts[key] || 0;
-  }
-
   attentionPositions = computed(() => {
     return this.positionService.positions().filter(p => p.status === 'Critical' || p.status === 'At Risk').slice(0, 3);
   });

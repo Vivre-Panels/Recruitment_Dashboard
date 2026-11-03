@@ -9,7 +9,7 @@ import { DrawerComponent } from '../../shared/components/drawer/drawer.component
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { PositionService } from '../../core/services/position.service';
 import { ToastService } from '../../core/services/toast.service';
-import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../core/services/recruitment-lookups.service';
 
 @Component({
   selector: 'app-shell',
@@ -67,7 +67,20 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
                 formControlName="department"
                 class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-900"
               >
-                <option *ngFor="let dep of departments" [value]="dep">{{ dep }}</option>
+                <option value="" disabled>Select department</option>
+                <option *ngFor="let dep of departments()" [value]="dep">{{ dep }}</option>
+              </select>
+            </div>
+
+            <!-- Team -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Team</label>
+              <select
+                formControlName="team"
+                class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-900"
+              >
+                <option value="">Select team</option>
+                <option *ngFor="let team of teams()" [value]="team">{{ team }}</option>
               </select>
             </div>
 
@@ -90,9 +103,8 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
                 formControlName="priority"
                 class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-900"
               >
-                <option value="P0">P0 — Critical Escalation (< 25 Days)</option>
-                <option value="P1">P1 — High Business Value (< 40 Days)</option>
-                <option value="P2">P2 — Standard Backfill (< 60 Days)</option>
+                <option value="" disabled>Select priority</option>
+                <option *ngFor="let priority of priorities()" [value]="priority">{{ priority }}</option>
               </select>
             </div>
 
@@ -113,7 +125,8 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
                 formControlName="hiringManager"
                 class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-900"
               >
-                <option *ngFor="let hm of hiringManagers" [value]="hm">{{ hm }}</option>
+                <option value="" disabled>Select hiring manager</option>
+                <option *ngFor="let hm of hiringManagers()" [value]="hm">{{ hm }}</option>
               </select>
             </div>
 
@@ -124,7 +137,8 @@ import { DEPARTMENTS, HIRING_MANAGERS, RECRUITERS_LIST } from '../../core/consta
                 formControlName="owner"
                 class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-900"
               >
-                <option *ngFor="let rec of recruiters" [value]="rec.name">{{ rec.name }}</option>
+                <option value="" disabled>Select lead recruiter</option>
+                <option *ngFor="let rec of recruiters()" [value]="rec.recruiter_name">{{ rec.recruiter_name }}</option>
               </select>
             </div>
 
@@ -214,23 +228,27 @@ export class AppShellComponent {
 
   isCreatePositionOpen = false;
 
-  departments = DEPARTMENTS;
-  hiringManagers = HIRING_MANAGERS;
-  recruiters = RECRUITERS_LIST;
+  private lookups = inject(RecruitmentLookupsService);
+  departments = this.lookups.departments;
+  teams = this.lookups.teams;
+  priorities = this.lookups.priorities;
+  hiringManagers = this.lookups.hiringManagers;
+  recruiters = this.lookups.recruiters;
 
   positionForm: FormGroup = this.fb.group({
     title: ['', Validators.required],
-    department: ['Engineering', Validators.required],
+    department: ['', Validators.required],
+    team: [''],
     requiredHc: [1, [Validators.required, Validators.min(1)]],
-    priority: ['P0', Validators.required],
-    targetDate: ['2026-10-15', Validators.required],
-    hiringManager: [HIRING_MANAGERS[0], Validators.required],
-    owner: [RECRUITERS_LIST[0].name, Validators.required],
-    salaryRange: ['$130k - $160k'],
-    location: ['San Francisco, CA (Hybrid)'],
-    experienceRange: ['5 - 8 Years'],
-    mustHaves: ['Golang, Distributed Systems, Kubernetes'],
-    knockout: ['Less than 4 years relevant experience']
+    priority: ['', Validators.required],
+    targetDate: ['', Validators.required],
+    hiringManager: ['', Validators.required],
+    owner: ['', Validators.required],
+    salaryRange: [''],
+    location: [''],
+    experienceRange: [''],
+    mustHaves: [''],
+    knockout: ['']
   });
 
   submitPosition() {
@@ -243,6 +261,7 @@ export class AppShellComponent {
     const newPos = this.positionService.createPosition({
       title: val.title,
       department: val.department,
+      team: val.team,
       requiredHc: Number(val.requiredHc),
       priority: val.priority,
       targetDate: val.targetDate,
@@ -263,15 +282,16 @@ export class AppShellComponent {
     this.isCreatePositionOpen = false;
     this.positionForm.reset({
       title: '',
-      department: 'Engineering',
+      department: '',
+      team: '',
       requiredHc: 1,
-      priority: 'P0',
-      targetDate: '2026-10-15',
-      hiringManager: HIRING_MANAGERS[0],
-      owner: RECRUITERS_LIST[0].name,
-      salaryRange: '$130k - $160k',
-      location: 'San Francisco, CA (Hybrid)',
-      experienceRange: '5 - 8 Years',
+      priority: '',
+      targetDate: '',
+      hiringManager: '',
+      owner: '',
+      salaryRange: '',
+      location: '',
+      experienceRange: '',
       mustHaves: '',
       knockout: ''
     });

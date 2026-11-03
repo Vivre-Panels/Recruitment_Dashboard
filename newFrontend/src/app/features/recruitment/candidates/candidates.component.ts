@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { CandidateService } from '../../../core/services/candidate.service';
 import { PositionService } from '../../../core/services/position.service';
 import { Candidate } from '../../../core/models/recruitment.model';
-import { PIPELINE_STAGES, DEPARTMENTS } from '../../../core/constants/navigation.constant';
+import { PIPELINE_STAGES } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -291,7 +292,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
               class="app-input"
             >
               <option value="ALL">All Departments</option>
-              <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
+              <option *ngFor="let d of departments()" [value]="d">{{ d }}</option>
             </select>
           </div>
 
@@ -333,6 +334,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 export class RecruitmentCandidatesComponent implements OnInit {
   candidateService = inject(CandidateService);
   positionService = inject(PositionService);
+  private lookups = inject(RecruitmentLookupsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -343,7 +345,7 @@ export class RecruitmentCandidatesComponent implements OnInit {
   ];
 
   pipelineStages = PIPELINE_STAGES;
-  departments = DEPARTMENTS;
+  departments = this.lookups.departments;
 
   searchTerm = signal('');
   selectedStage = signal('ALL');

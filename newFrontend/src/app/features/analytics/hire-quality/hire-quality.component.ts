@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
@@ -15,7 +14,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
     RouterModule,
     PageHeaderComponent,
     KpiCardComponent,
-    IconComponent,
     LoadingStateComponent
   ],
   template: `
@@ -149,7 +147,7 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
                 <!-- CSAT -->
                 <td class="py-3.5 px-4 text-center">
                   <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-mono font-bold">
-                    ★ {{ hq.avgOnboardingFeedback }} / 5.0
+                    <ng-container *ngIf="hq.avgOnboardingFeedback != null">★ {{ hq.avgOnboardingFeedback }} / 5.0</ng-container>
                   </span>
                 </td>
               </tr>

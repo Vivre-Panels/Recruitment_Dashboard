@@ -25,7 +25,6 @@ export const NAV_MODULES: NavItem[] = [
     ]
   }
 ];
-
 export const PIPELINE_STAGES: Array<{ name: string; key: string; color: string; description: string }> = [
   { name: 'Sourced', key: 'Sourced', color: 'bg-slate-100 text-slate-700 border-slate-300', description: 'CVs identified and added to pipeline' },
   { name: 'Screening', key: 'Screening', color: 'bg-blue-50 text-blue-700 border-blue-200', description: 'Recruiter preliminary screening' },
@@ -37,28 +36,3 @@ export const PIPELINE_STAGES: Array<{ name: string; key: string; color: string; 
   { name: 'Successful', key: 'Successful', color: 'bg-emerald-100 text-emerald-800 border-emerald-300', description: 'Completed 30-day retention successfully' }
 ];
 
-export const DEPARTMENTS = [
-  'Engineering',
-  'Product Management',
-  'Data & AI',
-  'Sales & BD',
-  'Operations',
-  'Marketing',
-  'Design & UX',
-  'Finance & Legal'
-];
-
-export const RECRUITERS_LIST = [
-  { id: 'REC-1', name: 'Banashree Roy', email: 'banashree.roy@vivrepanels.com', avatar: 'BR' },
-  { id: 'REC-2', name: 'Meghna Deb Sarkar', email: 'meghna.debsarkar@vivrepanels.com', avatar: 'MD' },
-  { id: 'REC-3', name: 'Poushali Das', email: 'poushali.das@vivrepanels.com', avatar: 'PD' },
-  { id: 'REC-4', name: 'Priya Saha', email: 'priya.saha@vivrepanels.com', avatar: 'PS' }
-];
-
-export const HIRING_MANAGERS = [
-  'Vikram Malhotra (VP Eng)',
-  'Ananya Roy (Head of Product)',
-  'Devendra Singh (Director Data)',
-  'Kavita Deshmukh (VP Sales)',
-  'Rohit Joshi (Operations Lead)'
-];

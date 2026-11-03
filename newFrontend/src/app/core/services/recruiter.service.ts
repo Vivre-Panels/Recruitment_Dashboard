@@ -180,9 +180,10 @@ export class RecruiterService {
           if (!matchedRec) return;
 
           const recName = matchedRec;
-          const posTitle = (app.Posting_Title || 'General').trim();
+          const posTitle = String(app.Posting_Title || '').trim();
+          if (!posTitle) return;
 
-          if (posTitle && posTitle !== 'General') allPositionsSet.add(posTitle);
+          allPositionsSet.add(posTitle);
 
           // Apply chained filters
           if (filters.recruiter && filters.recruiter !== 'ALL') {

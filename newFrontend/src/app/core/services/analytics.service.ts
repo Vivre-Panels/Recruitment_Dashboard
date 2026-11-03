@@ -82,9 +82,8 @@ export class AnalyticsService {
           const mapped: FunnelMetric[] = res.data.stages.map((st: any) => ({
             stage: st.stage as PipelineStage,
             count: st.count || 0,
-            conversionRate: Math.round(st.conversion_from_prev || 100),
-            dropOffRate: Math.max(0, 100 - Math.round(st.conversion_from_prev || 100)),
-            avgDaysInStage: 3
+            conversionRate: Math.round(st.conversion_from_prev ?? 0),
+            dropOffRate: Math.max(0, 100 - Math.round(st.conversion_from_prev ?? 0))
           }));
           this.funnelState.set(mapped);
         }
@@ -112,12 +111,11 @@ export class AnalyticsService {
             {
               department: 'All Departments',
               totalJoined: d.total_joined || 0,
-              retention7DaysPct: Math.round(d.retention_7d?.rate_percentage || 100),
-              retention30DaysPct: Math.round(d.retention_30d?.rate_percentage || 100),
+              retention7DaysPct: Math.round(d.retention_7d?.rate_percentage ?? 0),
+              retention30DaysPct: Math.round(d.retention_30d?.rate_percentage ?? 0),
               failure30DaysPct: d.total_joined ? Math.round((d.failures_30d_count / d.total_joined) * 100) : 0,
               replacementRatePct: d.total_joined ? Math.round((d.replacement_tickets_active / d.total_joined) * 100) : 0,
-              successfulHireIndexPct: Math.round(d.retention_30d?.rate_percentage || 100),
-              avgOnboardingFeedback: 4.8
+              successfulHireIndexPct: Math.round(d.retention_30d?.rate_percentage ?? 0),
             }
           ];
           this.hireQualityState.set(mapped);

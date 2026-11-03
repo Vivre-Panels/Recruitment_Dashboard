@@ -58,7 +58,7 @@ export class CandidateService {
         this.isLoading.set(false);
       }),
       catchError(err => {
-        console.warn('Backend candidates API connection failed, using fallback:', err);
+        console.warn('Backend candidates API connection failed; displaying no records:', err);
         this.isLoading.set(false);
         return of(this.candidatesState());
       })
@@ -109,10 +109,7 @@ export class CandidateService {
       }
     }
 
-    if (found.length === 0) {
-      if (postingTitle) found.push(postingTitle);
-      else found.push('Verified Candidate');
-    }
+    if (found.length === 0 && postingTitle && new RegExp(`\\b${postingTitle}\\b`, 'i').test(text)) found.push(postingTitle);
     return Array.from(new Set(found));
   }
 
@@ -127,7 +124,7 @@ export class CandidateService {
     else if (statusLower.includes('interview') || app.Manager_Round_Schedule_DateTime) stage = 'Interview';
     else if (app.Tellecalling_Status || app.TelleCalling_Time) stage = 'Screening';
 
-    const cvScoreNum = app.CV_Score ? parseFloat(app.CV_Score) : (app.Call_Audit_Score ? parseFloat(app.Call_Audit_Score) : 70);
+    const cvScoreNum = app.CV_Score ? parseFloat(app.CV_Score) : (app.Call_Audit_Score ? parseFloat(app.Call_Audit_Score) : 0);
     const feedback = app.Tellecalling_Feedback || '';
     const summary = app.Profile_Summary || '';
 
@@ -139,22 +136,22 @@ export class CandidateService {
 
     return {
       id: app.Application_ID || `CAN-${app.id}`,
-      name: app.Candidate_Name || 'Applicant',
-      email: `${(app.Candidate_Name || 'candidate').toLowerCase().replace(/[^a-z0-9]/g, '.')}@vivrepanels.com`,
+      name: app.Candidate_Name || '',
+      email: app.Email || app.email || '',
       phone: app.Mobile || '',
-      positionId: app.Job_Opening_ID || 'POS-101',
-      positionTitle: app.Posting_Title || 'Role Title',
-      department: app.Department || app.department || 'Operations',
+      positionId: app.Job_Opening_ID || '',
+      positionTitle: app.Posting_Title || '',
+      department: app.Department || app.department || '',
       team: app.Team || app.team || '',
       currentStage: stage,
-      recruiter: app.Recruiter_Name || 'Recruiter',
+      recruiter: app.Recruiter_Name || '',
       experienceYears: expYears,
-      currentCompany: app.Source || 'Direct Sourced',
-      currentDesignation: app.Posting_Title || 'Candidate',
+      currentCompany: app.Source || '',
+      currentDesignation: app.Current_Designation || '',
       noticePeriodDays: noticeDays,
       expectedSalary: expectedSal,
       currentSalary: currentSal,
-      location: app.Location || 'Kolkata, IN',
+      location: app.Location || '',
       qualityScore: cvScoreNum,
       status: isRejected ? 'Rejected' : (stage === 'Joined' ? 'Joined' : 'Active'),
       skills: skillList,
@@ -162,10 +159,10 @@ export class CandidateService {
         {
           id: `TL-${app.id}`,
           stage: stage,
-          date: (app.Application_Created_Time || '').split('T')[0] || new Date().toISOString().split('T')[0],
-          actor: app.Recruiter_Name || 'System',
-          title: `Status: ${app.Application_Status || 'Active'}`,
-          description: app.Tellecalling_Feedback || app.Profile_Summary || 'Application tracked in pipeline',
+          date: (app.Application_Created_Time || '').split('T')[0],
+          actor: app.Recruiter_Name || '',
+          title: `Status: ${app.Application_Status || app.Tellecalling_Status || ''}`,
+          description: app.Tellecalling_Feedback || app.Profile_Summary || '',
           type: 'info'
         }
       ],
@@ -262,7 +259,7 @@ export class CandidateService {
     );
   }
 
-  assignTalentToPosition(talent: { name: string; email: string; phone: string; skills: string[]; experienceYears: number; location: string }, positionId: string, positionTitle: string, department: string): Candidate {
+  assignTalentToPosition(talent: { name: string; email: string; phone: string; skills: string[]; experienceYears: number | null; location: string }, positionId: string, positionTitle: string, department: string): Candidate {
     const newId = `CAN-${200 + this.candidatesState().length + 1}`;
     const newCandidate: Candidate = {
       id: newId,
@@ -274,7 +271,7 @@ export class CandidateService {
       department,
       currentStage: 'Sourced',
       recruiter: 'Priya Saha',
-      experienceYears: talent.experienceYears,
+      experienceYears: talent.experienceYears ?? 0,
       currentCompany: 'Talent Bank Sourced',
       currentDesignation: 'Candidate',
       noticePeriodDays: 30,

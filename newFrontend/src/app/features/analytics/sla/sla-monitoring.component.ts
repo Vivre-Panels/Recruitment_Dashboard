@@ -9,7 +9,6 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
@@ -26,7 +25,6 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
     KpiCardComponent,
     StatusBadgeComponent,
     SearchInputComponent,
-    IconComponent,
     EmptyStateComponent,
     DrawerComponent,
     LoadingStateComponent,

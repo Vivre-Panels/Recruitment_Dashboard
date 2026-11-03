@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { RecruiterService } from '../../../core/services/recruiter.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
@@ -13,7 +12,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
     CommonModule,
     RouterModule,
     PageHeaderComponent,
-    IconComponent,
     LoadingStateComponent
   ],
   template: `

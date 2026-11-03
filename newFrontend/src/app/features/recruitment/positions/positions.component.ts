@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PositionService } from '../../../core/services/position.service';
-import { DEPARTMENTS, RECRUITERS_LIST, HIRING_MANAGERS } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { Position } from '../../../core/models/recruitment.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -275,7 +275,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
               class="app-input"
             >
               <option value="ALL">All Departments</option>
-              <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
+              <option *ngFor="let d of departments()" [value]="d">{{ d }}</option>
             </select>
           </div>
 
@@ -318,6 +318,7 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 })
 export class RecruitmentPositionsComponent {
   positionService = inject(PositionService);
+  private lookups = inject(RecruitmentLookupsService);
 
   recruitmentTabs: ViewTab[] = [
     { label: 'Positions List', icon: 'list', route: '/recruitment/positions' },
@@ -327,9 +328,7 @@ export class RecruitmentPositionsComponent {
     { label: 'Talent Bank List', icon: 'database', route: '/recruitment/talent-bank' }
   ];
 
-  departments = DEPARTMENTS;
-  recruiters = RECRUITERS_LIST;
-  hiringManagers = HIRING_MANAGERS;
+  departments = this.lookups.departments;
 
   searchTerm = signal('');
   selectedDepartment = signal('ALL');

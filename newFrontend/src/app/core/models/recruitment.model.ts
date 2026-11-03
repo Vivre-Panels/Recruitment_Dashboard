@@ -26,7 +26,7 @@ export interface FunnelMetric {
   count: number;
   conversionRate: number;
   dropOffRate: number;
-  avgDaysInStage: number;
+  avgDaysInStage?: number;
 }
 
 export interface Position {
@@ -175,7 +175,7 @@ export interface HireQualityMetric {
   failure30DaysPct: number;
   replacementRatePct: number;
   successfulHireIndexPct: number;
-  avgOnboardingFeedback: number;
+  avgOnboardingFeedback?: number;
 }
 
 export interface ReviewActionItem {

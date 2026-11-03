@@ -33,6 +33,7 @@ func main() {
 	api := router.Group("/recruit_api")
 	{
 		api.GET("/requisitions", handlers.GetRequisitions)
+		api.GET("/lookups/recruitment", handlers.GetRecruitmentLookups)
 		api.POST("/requisition", handlers.CreateRequisition)
 		api.GET("/applications", handlers.GetApplications)
 		api.POST("/application", handlers.CreateApplication)

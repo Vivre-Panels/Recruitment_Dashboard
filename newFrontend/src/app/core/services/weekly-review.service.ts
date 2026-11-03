@@ -53,28 +53,20 @@ export class WeeklyReviewService {
           const d = res.data;
           this.summaryState.set({
             weekNumber: `W-${new Date().getFullYear()}`,
-            startDate: d.start_date || new Date().toISOString().split('T')[0],
-            endDate: d.end_date || new Date().toISOString().split('T')[0],
-            plannedClosures: d.total_active_openings || 10,
-            actualClosures: d.candidates_joined || 3,
-            redP0PositionsCount: d.active_bottlenecks || 2,
-            openBottlenecksCount: d.active_bottlenecks || 2,
-            closureRatePct: d.total_active_openings ? Math.round((d.candidates_joined / d.total_active_openings) * 100) : 75,
-            slaBreachCount: d.active_sla_breaches || 1,
+            startDate: d.start_date || '',
+            endDate: d.end_date || '',
+            plannedClosures: d.total_active_openings ?? 0,
+            actualClosures: d.candidates_joined ?? 0,
+            redP0PositionsCount: d.active_bottlenecks ?? 0,
+            openBottlenecksCount: d.active_bottlenecks ?? 0,
+            closureRatePct: d.total_active_openings ? Math.round((d.candidates_joined / d.total_active_openings) * 100) : 0,
+            slaBreachCount: d.active_sla_breaches ?? 0,
             keyHighlights: [
               `${d.new_requisitions_opened || 0} New requisitions opened this week`,
               `${d.offers_released || 0} Offers released across departments`,
               `${d.candidates_joined || 0} Candidates joined successfully`
             ],
-            criticalRisks: [
-              {
-                positionTitle: 'Operations Manager',
-                department: 'Operations',
-                issue: 'Pending final comp sign-off',
-                owner: 'Priya Saha',
-                daysPending: 4
-              }
-            ]
+            criticalRisks: []
           });
         }
       }),

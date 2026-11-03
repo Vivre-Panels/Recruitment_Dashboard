@@ -26,6 +26,20 @@ export const routes: Routes = [
             m => m.DashboardControlTowerComponent
           )
       },
+      {
+        path: 'dashboard/candidate-pipeline',
+        loadComponent: () =>
+          import('./features/dashboard/candidate-pipeline-stages/candidate-pipeline-stages.component').then(
+            m => m.CandidatePipelineStagesComponent
+          )
+      },
+      {
+        path: 'dashboard/recruiter-insights',
+        loadComponent: () =>
+          import('./features/dashboard/recruiter-insights/recruiter-insights.component').then(
+            m => m.RecruiterInsightsComponent
+          )
+      },
       // Recruitment Routes
       {
         path: 'recruitment/requisitions',

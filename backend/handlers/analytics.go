@@ -659,6 +659,7 @@ func GetTalentBank(c *gin.Context) {
 			a.[Id], ISNULL(a.[Application_ID], '') AS Application_ID,
 			ISNULL(a.[Candidate_Name], '') AS Candidate_Name,
 			ISNULL(a.[Posting_Title], '') AS Position,
+			ISNULL(r.[Department], '') AS Department,
 			ISNULL(a.[Mobile], '') AS Mobile,
 			ISNULL(a.[CV_Link], '') AS CV_Link,
 			ISNULL(a.[CV_Score], '0') AS CV_Score,
@@ -666,6 +667,7 @@ func GetTalentBank(c *gin.Context) {
 			ISNULL(a.[Candidate_Attributes], '') AS Candidate_Attributes,
 			ISNULL(a.[Recruiter_Name], '') AS Recruiter_Name
 		FROM [dbo].[application_pipeline] a
+		LEFT JOIN [dbo].[requisition] r ON r.[Job_Opening_ID] = a.[Job_Opening_ID]
 		WHERE %s
 		ORDER BY a.[Application_Created_Time] DESC`, whereStmt)
 
@@ -675,13 +677,14 @@ func GetTalentBank(c *gin.Context) {
 		defer rows.Close()
 		for rows.Next() {
 			var id int64
-			var appID, cName, pos, mob, cvLink, cvScore, summary, attributes, recruiter string
-			if err := rows.Scan(&id, &appID, &cName, &pos, &mob, &cvLink, &cvScore, &summary, &attributes, &recruiter); err == nil {
+			var appID, cName, pos, department, mob, cvLink, cvScore, summary, attributes, recruiter string
+			if err := rows.Scan(&id, &appID, &cName, &pos, &department, &mob, &cvLink, &cvScore, &summary, &attributes, &recruiter); err == nil {
 				list = append(list, gin.H{
 					"id":                   id,
 					"application_id":       appID,
 					"candidate_name":       cName,
 					"position":             pos,
+					"department":           department,
 					"mobile":               mob,
 					"cv_link":              extractHref(&cvLink),
 					"cv_score":             cvScore,
@@ -739,7 +742,10 @@ func GetRecruiterInsights(c *gin.Context) {
 	fromParam := strings.TrimSpace(c.Query("from"))
 	toParam := strings.TrimSpace(c.Query("to"))
 
-	whereClauses := []string{"1=1"}
+	whereClauses := []string{
+		"NULLIF(LTRIM(RTRIM(ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]))), '') IS NOT NULL",
+		"NULLIF(LTRIM(RTRIM(ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title]))), '') IS NOT NULL",
+	}
 	args := []interface{}{}
 	argIdx := 1
 
@@ -772,7 +778,7 @@ func GetRecruiterInsights(c *gin.Context) {
 	query := fmt.Sprintf(`
 		SELECT 
 			ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]) AS recruiter_name,
-			ISNULL(NULLIF(a.[Posting_Title], ''), ISNULL(r.[Job_Title], 'General')) AS position,
+			ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title]) AS position,
 			COUNT(1) AS cv_sourced,
 			COUNT(CASE WHEN LOWER(a.[Application_Status]) LIKE '%%approve%%' 
 			             OR LOWER(a.[Application_Status]) LIKE '%%shortlist%%' 

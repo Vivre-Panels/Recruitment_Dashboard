@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import { AnalyticsService } from '../../../core/services/analytics.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { KpiCardComponent } from '../../../shared/components/kpi-card/kpi-card.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
@@ -15,7 +14,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
     RouterModule,
     PageHeaderComponent,
     KpiCardComponent,
-    IconComponent,
     LoadingStateComponent
   ],
   template: `
@@ -75,7 +73,6 @@ import { LoadingStateComponent } from '../../../shared/components/loading-state/
                 </span>
                 <div>
                   <h4 class="text-sm font-bold text-slate-900 leading-tight">{{ stage.stage }}</h4>
-                  <span class="text-[11px] text-slate-500">Avg Stage Duration: <strong class="text-slate-800 font-mono">{{ stage.avgDaysInStage }} Days</strong></span>
                 </div>
               </div>
 

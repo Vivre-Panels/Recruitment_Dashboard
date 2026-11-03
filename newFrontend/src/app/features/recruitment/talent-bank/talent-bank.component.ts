@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { PositionService } from '../../../core/services/position.service';
 import { CandidateService } from '../../../core/services/candidate.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { DEPARTMENTS } from '../../../core/constants/navigation.constant';
+import { RecruitmentLookupsService } from '../../../core/services/recruitment-lookups.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -22,7 +22,7 @@ interface TalentCandidate {
   email: string;
   phone: string;
   department: string;
-  experienceYears: number;
+  experienceYears: number | null;
   currentCompany: string;
   previousIndustry: string;
   skills: string[];
@@ -94,7 +94,7 @@ interface TalentCandidate {
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
             >
               <option value="ALL">All Departments</option>
-              <option *ngFor="let d of departments" [value]="d">{{ d }}</option>
+              <option *ngFor="let d of departments()" [value]="d">{{ d }}</option>
             </select>
           </div>
 
@@ -196,7 +196,7 @@ interface TalentCandidate {
       <app-empty-state
         *ngIf="!isLoading() && filteredTalents().length === 0"
         title="No talent profiles match"
-        message="Try loosening your experience or availability filters."
+        message="No matching database records were returned."
         actionLabel="Reset Filters"
         actionIcon="rotate-ccw"
         (actionClick)="resetFilters()"
@@ -312,13 +312,14 @@ interface TalentCandidate {
 export class RecruitmentTalentBankComponent implements OnInit {
   positionService = inject(PositionService);
   private candidateService = inject(CandidateService);
+  private lookups = inject(RecruitmentLookupsService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private http = inject(HttpClient);
 
   talents = signal<TalentCandidate[]>([]);
   isLoading = signal<boolean>(true);
-  departments = DEPARTMENTS;
+  departments = this.lookups.departments;
 
   searchTerm = signal('');
   selectedDepartment = signal('ALL');
@@ -328,7 +329,7 @@ export class RecruitmentTalentBankComponent implements OnInit {
   isAssignModalOpen = false;
   isProfileModalOpen = false;
   selectedTalent?: TalentCandidate;
-  targetPositionId = 'POS-101';
+  targetPositionId = '';
 
   currentPage = signal(1);
   pageSize = signal(12);
@@ -345,35 +346,18 @@ export class RecruitmentTalentBankComponent implements OnInit {
         if (res.success && res.data && res.data.length > 0) {
           loaded = res.data.map(item => ({
             id: item.application_id || `TAL-${item.id}`,
-            name: item.candidate_name || 'Vetted Candidate',
-            email: `${(item.candidate_name || 'candidate').toLowerCase().replace(/\s+/g, '.')}@example.com`,
+            name: item.candidate_name || '',
+            email: item.email || '',
             phone: item.mobile || '',
-            department: item.position || 'Engineering',
-            experienceYears: 5,
-            currentCompany: 'Vetted Pool',
-            previousIndustry: 'Enterprise Services',
-            skills: item.candidate_attributes ? item.candidate_attributes.split(',') : ['High Potential'],
-            availability: 'Immediate (15 days)',
-            expectedSalary: 'Competitive',
-            location: 'Kolkata, IN',
-            notes: item.profile_summary || 'Vetted talent available for immediate assignment.'
-          }));
-        } else {
-          const cands = this.candidateService.candidates();
-          loaded = cands.slice(0, 6).map(c => ({
-            id: c.id,
-            name: c.name,
-            email: c.email,
-            phone: c.phone,
-            department: c.department || 'Operations',
-            experienceYears: c.experienceYears || 4,
-            currentCompany: c.currentCompany || 'Vetted Pool',
-            previousIndustry: 'Industry Talent',
-            skills: c.skills,
-            availability: '15-30 days',
-            expectedSalary: c.expectedSalary || 'As Per Profile',
-            location: c.location || 'Kolkata, IN',
-            notes: `${c.name} evaluated with CV Score ${c.qualityScore}%. Available in silver medalist talent pool.`
+            department: item.department || '',
+            experienceYears: item.experience_years ?? null,
+            currentCompany: item.source || '',
+            previousIndustry: '',
+            skills: item.candidate_attributes ? item.candidate_attributes.split(',').map((value: string) => value.trim()).filter(Boolean) : [],
+            availability: item.availability || '',
+            expectedSalary: item.expected_salary || '',
+            location: item.location || '',
+            notes: item.profile_summary || ''
           }));
         }
         this.talents.set(loaded);
@@ -400,8 +384,8 @@ export class RecruitmentTalentBankComponent implements OnInit {
       const matchesDept = dept === 'ALL' || t.department === dept;
       
       let matchesExp = true;
-      if (exp === '5') matchesExp = t.experienceYears >= 5;
-      if (exp === '8') matchesExp = t.experienceYears >= 8;
+      if (exp === '5') matchesExp = (t.experienceYears ?? 0) >= 5;
+      if (exp === '8') matchesExp = (t.experienceYears ?? 0) >= 8;
 
       return matchesSearch && matchesDept && matchesExp;
     });

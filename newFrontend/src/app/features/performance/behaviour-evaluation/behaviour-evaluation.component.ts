@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { PerformanceService } from '../../../core/services/performance.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-performance-behaviour-evaluation',
@@ -12,7 +11,6 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     CommonModule,
     RouterModule,
     PageHeaderComponent,
-    IconComponent
   ],
   template: `
     <div class="space-y-6">

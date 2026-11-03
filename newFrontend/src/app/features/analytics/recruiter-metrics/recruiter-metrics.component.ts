@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import { RecruiterService } from '../../../core/services/recruiter.service';
 import { Recruiter } from '../../../core/models/recruitment.model';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 
 @Component({
@@ -14,7 +13,6 @@ import { DrawerComponent } from '../../../shared/components/drawer/drawer.compon
     CommonModule,
     RouterModule,
     PageHeaderComponent,
-    IconComponent,
     DrawerComponent
   ],
   template: `
