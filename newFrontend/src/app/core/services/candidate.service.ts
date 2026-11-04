@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { map, tap, catchError, concatMap } from 'rxjs/operators';
 import { Candidate, PipelineStage, InterviewScorecard, CandidateTimelineEvent } from '../models/recruitment.model';
 import { environment } from '../../../environments/environment';
 
@@ -65,6 +65,59 @@ export class CandidateService {
     );
   }
 
+  loadAllApplicationsForReport(pageSize = 1000): Observable<{
+    applications: Candidate[];
+    databaseTotal: number;
+    complete: boolean;
+    duplicateRows: number;
+    error?: string;
+  }> {
+    const fetchPage = (page: number, accumulated: Candidate[], databaseTotal: number): Observable<{
+      applications: Candidate[];
+      databaseTotal: number;
+      complete: boolean;
+      duplicateRows: number;
+      error?: string;
+    }> => this.http.get<{ success: boolean; data: any[]; total?: number }>(`${this.apiUrl}/applications?page=${page}&limit=${pageSize}`).pipe(
+      concatMap(response => {
+        const reportedTotal = Number(response.total);
+        const total = Number.isFinite(reportedTotal) ? reportedTotal : databaseTotal;
+        if (!response.success || !Array.isArray(response.data)) {
+          return of({ applications: accumulated, databaseTotal: total, complete: false, duplicateRows: 0, error: 'The applications API returned an incomplete response.' });
+        }
+
+        const merged = accumulated.concat(response.data.map(app => this.mapApiAppToCandidate(app)));
+        if (response.data.length === pageSize && page < 10000) return fetchPage(page + 1, merged, total);
+
+        const unique = new Map<string, Candidate>();
+        for (const application of merged) {
+          const key = application.id.trim().toLowerCase();
+          if (key && !unique.has(key)) unique.set(key, application);
+        }
+        const applications = Array.from(unique.values());
+        const duplicateRows = merged.length - applications.length;
+        const countConsistent = total === 0 ? applications.length === 0 : applications.length >= total;
+        const complete = response.data.length < pageSize && countConsistent;
+        return of({
+          applications,
+          databaseTotal: total,
+          complete,
+          duplicateRows,
+          ...(!complete ? { error: 'The API row count did not match the database total; this report may be incomplete.' } : {})
+        });
+      }),
+      catchError(() => of({
+        applications: accumulated,
+        databaseTotal,
+        complete: false,
+        duplicateRows: 0,
+        error: `Could not load application page ${page}; report counts are incomplete.`
+      }))
+    );
+
+    return fetchPage(1, [], 0);
+  }
+
   private parseExperience(feedback: string, summary: string): number {
     const text = `${feedback || ''} ${summary || ''}`;
     if (!text.trim()) return 0;
@@ -114,7 +167,14 @@ export class CandidateService {
   }
 
   private mapApiAppToCandidate(app: any): Candidate {
-    const statusLower = (app.Application_Status || app.Tellecalling_Status || '').toLowerCase();
+    const statusLower = [
+      app.Application_Status,
+      app.Tellecalling_Status,
+      app.First_Interview_Status,
+      app.Final_Round_Review_Status,
+      app.rd_Directorial_Round_Status,
+      app.Background_Verification
+    ].filter(Boolean).join(' ').toLowerCase();
     const isRejected = statusLower.includes('reject') || statusLower.includes('drop') || statusLower.includes('unsuitable') || statusLower.includes('not interested');
 
     let stage: PipelineStage = 'Sourced';
@@ -170,8 +230,53 @@ export class CandidateService {
       notes: app.Tellecalling_Feedback ? [{ author: app.Recruiter_Name || 'Recruiter', date: new Date().toISOString().split('T')[0], content: app.Tellecalling_Feedback }] : [],
       resumeUrl: app.CV_Link,
       matchScore: Math.round(cvScoreNum),
-      rawStatus: `${app.Application_Status || ''} ${app.Tellecalling_Status || ''}`.trim(),
-      telleCallingTime: app.TelleCalling_Time || app.telleCallingTime || ''
+      rawStatus: [
+        app.Application_Status,
+        app.Tellecalling_Status,
+        app.First_Interview_Status,
+        app.Final_Round_Review_Status,
+        app.rd_Directorial_Round_Status,
+        app.Background_Verification
+      ].filter(Boolean).join(' ').trim(),
+      applicationCreatedAt: app.Application_Created_Time || '',
+      positionOpeningDate: app.Position_Opening_Date || '',
+      telecallingFeedback: app.Tellecalling_Feedback || app.Interview_Feedback || '',
+      approvalRemarks: app.Approval_Remarks || '',
+      firstRoundFeedback: app.First_Round_Feedback || '',
+      managerRoundFeedback: app.Manager_Round_Feedback || '',
+      directorialRoundFeedback: app.Directorial_Round_Feedback || '',
+      delayReason: app.Delay_Reason || '',
+      secondRoundDelayReason: app.nd_Round_Delay_Reason || app.n_Round_Delay_Reason || '',
+      thirdRoundDelayReason: app.rd_Round_Delay_Reason || '',
+      salaryNegotiationDelayReason: app.Salary_Negotiation_Delay_Reason || '',
+      offerLetterDelayReason: app.Offer_Letter_Delay_Reason || '',
+      firstRoundDropOffReason: app.First_Round_Drop_Off_Reason || '',
+      secondRoundDropOffReason: app.nd_Round_Drop_Off_Reason || '',
+      thirdRoundDropOffReason: app.rd_Round_Drop_Off_Reason || '',
+      salaryNegotiationDropOffReason: app.Salary_Negotiation_Drop_Off_Reason || '',
+      secondRoundDelayFlag: app.n_Round_Delay || app.nd_Round_Delay || '',
+      thirdRoundDelayFlag: app.rd_Round_Delay || '',
+      salaryNegotiationDelayFlag: app.Salary_Negotiation_Delay || '',
+      offerLetterDelayFlag: app.Offer_letter_Delay || app.Offer_Letter_Delay || '',
+      telleCallingTime: app.TelleCalling_Time || app.telleCallingTime || '',
+      telecallingDateTime: app.Telecalling_Date_Time || '',
+      telecallingStatus: app.Tellecalling_Status || '',
+      managerInterviewDateTime: app.Manager_Interview_DateTime || '',
+      managerRoundScheduleDateTime: app.Manager_Round_Schedule_DateTime || '',
+      managerRoundCompletedTime: app.Manager_Round_Completed_Time || '',
+      salaryNegotiationDateTime: app.Salary_Negotiation_Date_Time || '',
+      appointmentLetterDateTime: app.Appointment_Letter_Date_Time || '',
+      joiningDateTime: app.Joining_Date_Time || '',
+      dateOfJoining: app.Date_of_Joining || '',
+      hiringDateTime: app.Hiring_Date_Time || '',
+      qualifiedDateTime: app.Qualified_Date_Time || '',
+      firstRoundDateTime: app.First_Round_Date_Time || '',
+      secondRoundDateTime: app.Second_Round_Date_Time || '',
+      thirdRoundDateTime: app.Third_Round_Date_Time || '',
+      firstInterviewStatus: app.First_Interview_Status || '',
+      secondRoundStatus: app.Final_Round_Review_Status || '',
+      thirdRoundStatus: app.rd_Directorial_Round_Status || '',
+      offerAcceptedDateTime: app.Offer_Accepted_DateTime || ''
     };
   }
 

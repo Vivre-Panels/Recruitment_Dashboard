@@ -111,7 +111,45 @@ export interface Candidate {
   resumeUrl?: string;
   matchScore: number; // % match with job requirements
   rawStatus?: string;
+  applicationCreatedAt?: string;
+  positionOpeningDate?: string;
+  telecallingFeedback?: string;
+  approvalRemarks?: string;
+  firstRoundFeedback?: string;
+  managerRoundFeedback?: string;
+  directorialRoundFeedback?: string;
+  delayReason?: string;
+  secondRoundDelayReason?: string;
+  thirdRoundDelayReason?: string;
+  salaryNegotiationDelayReason?: string;
+  offerLetterDelayReason?: string;
+  firstRoundDropOffReason?: string;
+  secondRoundDropOffReason?: string;
+  thirdRoundDropOffReason?: string;
+  salaryNegotiationDropOffReason?: string;
+  secondRoundDelayFlag?: string;
+  thirdRoundDelayFlag?: string;
+  salaryNegotiationDelayFlag?: string;
+  offerLetterDelayFlag?: string;
   telleCallingTime?: string;
+  telecallingDateTime?: string;
+  telecallingStatus?: string;
+  managerInterviewDateTime?: string;
+  managerRoundScheduleDateTime?: string;
+  managerRoundCompletedTime?: string;
+  salaryNegotiationDateTime?: string;
+  appointmentLetterDateTime?: string;
+  joiningDateTime?: string;
+  dateOfJoining?: string;
+  hiringDateTime?: string;
+  qualifiedDateTime?: string;
+  firstRoundDateTime?: string;
+  secondRoundDateTime?: string;
+  thirdRoundDateTime?: string;
+  firstInterviewStatus?: string;
+  secondRoundStatus?: string;
+  thirdRoundStatus?: string;
+  offerAcceptedDateTime?: string;
 }
 
 export interface Recruiter {

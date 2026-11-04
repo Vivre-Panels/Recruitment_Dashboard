@@ -40,6 +40,20 @@ export const routes: Routes = [
             m => m.RecruiterInsightsComponent
           )
       },
+      {
+        path: 'dashboard/application-insights',
+        loadComponent: () =>
+          import('./features/dashboard/application-insights/application-insights.component').then(
+            m => m.ApplicationInsightsComponent
+          )
+      },
+      {
+        path: 'dashboard/recruiter-posting-delay-report',
+        loadComponent: () =>
+          import('./features/dashboard/recruiter-posting-delay-report/recruiter-posting-delay-report.component').then(
+            m => m.RecruiterPostingDelayReportComponent
+          )
+      },
       // Recruitment Routes
       {
         path: 'recruitment/requisitions',

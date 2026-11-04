@@ -60,7 +60,7 @@ import { environment } from '../../../../environments/environment';
       <app-loading-state *ngIf="positionService.isLoading()" type="kpis"></app-loading-state>
 
       <!-- Executive KPI Cards -->
-      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div *ngIf="!positionService.isLoading()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         <!-- 1. Pipeline Breakdown -->
         <div class="group cursor-pointer min-w-0" (click)="openPipelineModal()">
           <app-kpi-card
@@ -90,7 +90,35 @@ import { environment } from '../../../../environments/environment';
           ></app-kpi-card>
         </div>
 
-        <!-- 3. Required HC -->
+        <!-- 3. Application Wise Report -->
+        <a routerLink="/dashboard/application-insights" class="group block min-w-0 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
+          <app-kpi-card
+            title="Application Wise Report"
+            [value]="candidateService.totalCandidates()"
+            unit="Applications"
+            subtitle="Click to view report"
+            [showArrow]="true"
+            icon="file-text"
+            accent="brand"
+            class="block transition-all duration-300 hover:scale-[1.02] hover:shadow-brand-500/20"
+          ></app-kpi-card>
+        </a>
+
+        <!-- Recruiter × Posting Title Delay Report -->
+        <a routerLink="/dashboard/recruiter-posting-delay-report" class="group block min-w-0 cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
+          <app-kpi-card
+            title="Recruiter Posting Delay"
+            value="SLA"
+            unit="Report"
+            subtitle="Recruiter × posting title"
+            [showArrow]="true"
+            icon="bar-chart"
+            accent="danger"
+            class="block transition-all duration-300 hover:scale-[1.02] hover:shadow-brand-500/20"
+          ></app-kpi-card>
+        </a>
+
+        <!-- 4. Required HC -->
         <div class="min-w-0">
           <app-kpi-card
             title="Required HC"
