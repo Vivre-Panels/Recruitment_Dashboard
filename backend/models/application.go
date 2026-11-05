@@ -16,6 +16,7 @@ type Application struct {
 	Mobile                              *string     `json:"Mobile" db:"Mobile"`
 	PostingTitle                        *string     `json:"Posting_Title" db:"Posting_Title"`
 	ExternalPosition                    *string     `json:"External_Position" db:"External_Position"`
+	InternalDesignation                 *string     `json:"Internal_Designation" db:"Internal_Designation"`
 	Department                          *string     `json:"Department" db:"Department"`
 	PositionOpeningDate                 *string     `json:"Position_Opening_Date" db:"Position_Opening_Date"`
 	Team                                *string     `json:"Team" db:"Team"`

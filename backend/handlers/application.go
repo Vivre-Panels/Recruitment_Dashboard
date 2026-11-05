@@ -98,6 +98,7 @@ func CreateApplication(c *gin.Context) {
 				[Directorial_Round_Feedback] = @p56,
 				[Salary_Negotiation_Drop_Off_Reason] = @p57,
 				[Qualified_Date_Time] = @p58,
+				[Internal_Designation] = @p59,
 				[UpdatedAt] = GETUTCDATE()
 		WHEN NOT MATCHED THEN
 			INSERT ([Application_ID], [Application_Created_Time], [Application_Status],
@@ -114,11 +115,11 @@ func CreateApplication(c *gin.Context) {
 				[First_Round_Date_Time], [Second_Round_Date_Time], [Third_Round_Date_Time],
 				[First_Interview_Status], [Final_Round_Review_Status], [rd_Directorial_Round_Status],
 				[Salary_Negotiation_Date_Time], [Appointment_Letter_Date_Time], [Joining_Date_Time], [Date_of_Joining], [Hiring_Date_Time],
-				[Approval_Remarks], [First_Round_Feedback], [Manager_Round_Feedback], [Directorial_Round_Feedback], [Salary_Negotiation_Drop_Off_Reason], [Qualified_Date_Time])
+				[Approval_Remarks], [First_Round_Feedback], [Manager_Round_Feedback], [Directorial_Round_Feedback], [Salary_Negotiation_Drop_Off_Reason], [Qualified_Date_Time], [Internal_Designation])
 			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15,
 				@p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29,
 				@p30, @p31, @p32, @p33, @p34, @p35, @p36, @p37, @p38, @p39, @p40, @p41, @p42, @p43, @p44,
-				@p45, @p46, @p47, @p48, @p49, @p50, @p51, @p52, @p53, @p54, @p55, @p56, @p57, @p58)
+				@p45, @p46, @p47, @p48, @p49, @p50, @p51, @p52, @p53, @p54, @p55, @p56, @p57, @p58, @p59)
 		OUTPUT INSERTED.[Id];`
 
 	auditScore := parseFloat(app.CallAuditScore)
@@ -186,6 +187,7 @@ func CreateApplication(c *gin.Context) {
 		app.DirectorialRoundFeedback,
 		app.SalaryNegotiationDropOffReason,
 		app.QualifiedDateTime,
+		app.InternalDesignation,
 	).Scan(&newID)
 
 	if err != nil {
@@ -389,7 +391,7 @@ func GetApplications(c *gin.Context) {
 		a.[Call_Duration], a.[Performance_Score], a.[Behaviour_Score], a.[Performance_Eval_Details],
 		a.[Behaviour_Eval_Details], a.[Retention_7d_Status], a.[Retention_30d_Status],
 		a.[Is_30d_Failure], a.[Replacement_Required], a.[In_Talent_Bank], a.[Candidate_Attributes],
-		a.[CreatedAt], a.[UpdatedAt]
+		a.[CreatedAt], a.[UpdatedAt], a.[Internal_Designation]
 		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
 		LEFT JOIN [dbo].[requisition] r WITH (NOLOCK) 
 			ON (a.[Job_Opening_ID] = r.[Job_Opening_ID] OR LOWER(a.[Posting_Title]) = LOWER(r.[Job_Title]))

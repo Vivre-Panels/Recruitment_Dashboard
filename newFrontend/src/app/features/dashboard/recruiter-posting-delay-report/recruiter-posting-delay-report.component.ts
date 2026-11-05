@@ -39,6 +39,7 @@ interface RecruiterPostingSummary {
   notAssessableChecks: number;
   candidateSpecificChecks: number;
   stages: StageSummary[];
+  postingRows?: RecruiterPostingSummary[];
 }
 
 interface DatabaseRecruiter {
@@ -91,7 +92,6 @@ interface DatabaseRecruiter {
             <thead class="sticky top-0 z-10 bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-500">
               <tr class="border-b border-slate-200">
                 <th class="px-4 py-3">Recruiter</th>
-                <th class="px-3 py-3">Posting Title</th>
                 <th class="px-3 py-3 text-right">Applications</th>
                 <th class="px-3 py-3 text-right">Apps with Confirmed Delay</th>
                 <th class="px-3 py-3 text-right">Confirmed Delay Events</th>
@@ -102,7 +102,6 @@ interface DatabaseRecruiter {
               <ng-container *ngFor="let row of rows(); trackBy: trackByGroup">
                 <tr class="cursor-pointer hover:bg-slate-50/70" (click)="openRecruiterDetails($event, row.recruiter)">
                   <td class="px-4 py-3 font-semibold"><button type="button" class="text-left text-slate-900 underline decoration-dotted underline-offset-2 hover:text-brand-700" (click)="openRecruiterDetails($event, row.recruiter)">{{ row.recruiter }}</button></td>
-                  <td class="px-3 py-3 font-medium">{{ row.postingTitle }}</td>
                   <td class="px-3 py-3 text-right font-semibold">{{ row.totalApplications }}</td>
                   <td class="px-3 py-3 text-right">
                     <span class="font-bold" [ngClass]="row.delayedApplicationIds.size ? 'text-red-700' : 'text-slate-700'">{{ row.delayedApplicationIds.size }}</span>
@@ -110,40 +109,6 @@ interface DatabaseRecruiter {
                   </td>
                   <td class="px-3 py-3 text-right font-bold text-amber-800">{{ row.delayEvents }}</td>
                   <td class="px-3 py-3 text-right">{{ row.assessedChecks }} / {{ row.notAssessableChecks }} / {{ row.candidateSpecificChecks }}</td>
-                </tr>
-                <tr *ngIf="expandedGroupKey() === row.key" class="bg-slate-50/60">
-                  <td colspan="6" class="px-4 py-3">
-                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <h3 class="text-[11px] font-bold uppercase tracking-wide text-slate-700">Stage delay breakdown</h3>
-                      <span class="text-[10px] text-slate-500">Delayed application = unique Application ID with ≥1 confirmed breach. Delay event = one application-stage breach.</span>
-                    </div>
-                    <table class="w-full min-w-[700px] text-left text-[11px]">
-                      <thead class="text-[10px] uppercase tracking-wide text-slate-500">
-                        <tr>
-                          <th class="py-2">Stage · SLA</th>
-                          <th class="py-2 text-right">Delayed / Assessed</th>
-                          <th class="py-2 text-right">Not assessable</th>
-                          <th class="py-2 text-right">Candidate-specific</th>
-                          <th class="py-2 text-right">Affected applications</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-200">
-                        <tr *ngFor="let stage of row.stages">
-                          <td class="py-2 font-semibold text-slate-700">{{ stage.label }} <span class="font-normal text-slate-500">· {{ stage.slaLabel }}</span></td>
-                          <td class="py-2 text-right">{{ stage.delayed }} / {{ stage.assessed }}</td>
-                          <td class="py-2 text-right">{{ stage.notAssessable }}</td>
-                          <td class="py-2 text-right">{{ stage.candidateSpecific }}</td>
-                          <td class="py-2 text-right">
-                            <button *ngIf="stage.delayed > 0" type="button" class="font-bold text-brand-700 underline decoration-dotted underline-offset-2" (click)="openStageDetails($event, row, stage)">
-                              View {{ stage.delayed }}
-                            </button>
-                            <span *ngIf="stage.delayed === 0" class="text-slate-400">—</span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <p class="mt-2 text-[10px] text-slate-500">A missing timestamp or unrecognized delay flag is not counted as on-time or delayed. It is reported as not assessable.</p>
-                  </td>
                 </tr>
               </ng-container>
             </tbody>
@@ -196,8 +161,14 @@ interface DatabaseRecruiter {
           <section>
             <h3 class="mb-2 font-bold text-slate-900">Posting title breakdown</h3>
             <div class="overflow-hidden rounded-xl border border-slate-200">
-              <div *ngFor="let row of recruiterRows(recruiter.recruiter_name); trackBy: trackByGroup" class="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 border-b border-slate-100 px-3 py-3 last:border-b-0">
-                <span class="font-medium text-slate-700">{{ row.postingTitle }}</span><span class="text-slate-600">{{ row.totalApplications }} apps</span><span class="font-bold text-red-700">{{ row.delayedApplicationIds.size }} delayed</span>
+            <div *ngFor="let row of recruiterRows(recruiter.recruiter_name); trackBy: trackByGroup" class="space-y-2 border-b border-slate-100 px-3 py-3 last:border-b-0">
+                <div class="flex flex-wrap items-center justify-between gap-2"><span class="font-bold text-slate-800">{{ row.postingTitle }}</span><span class="text-slate-600">{{ row.totalApplications }} apps · <strong class="text-red-700">{{ row.delayedApplicationIds.size }} delayed</strong></span></div>
+                <div class="overflow-x-auto">
+                  <table class="w-full min-w-[620px] text-left text-[10px]">
+                    <thead class="text-slate-500"><tr><th class="py-1">Stage · SLA</th><th class="py-1 text-right">Delayed / Assessed</th><th class="py-1 text-right">Unassessable</th><th class="py-1 text-right">Candidate-specific</th><th class="py-1 text-right">Affected applications</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100"><tr *ngFor="let stage of row.stages"><td class="py-1.5 font-medium">{{ stage.label }} · {{ stage.slaLabel }}</td><td class="py-1.5 text-right">{{ stage.delayed }} / {{ stage.assessed }}</td><td class="py-1.5 text-right">{{ stage.notAssessable }}</td><td class="py-1.5 text-right">{{ stage.candidateSpecific }}</td><td class="py-1.5 text-right"><button *ngIf="stage.delayed > 0" type="button" class="font-bold text-brand-700 underline decoration-dotted underline-offset-2" (click)="openStageDetails($event, row, stage)">View {{ stage.delayed }}</button><span *ngIf="stage.delayed === 0" class="text-slate-400">—</span></td></tr></tbody>
+                  </table>
+                </div>
               </div>
               <p *ngIf="recruiterRows(recruiter.recruiter_name).length === 0" class="p-4 text-center text-slate-500">No matching application records for this recruiter.</p>
             </div>
@@ -301,7 +272,42 @@ export class RecruiterPostingDelayReportComponent {
       }
     }
 
-    return { rows: Array.from(groups.values()).sort((a, b) => a.recruiter.localeCompare(b.recruiter) || a.postingTitle.localeCompare(b.postingTitle)), excluded };
+    const postingRows = Array.from(groups.values()).sort((a, b) => a.recruiter.localeCompare(b.recruiter) || a.postingTitle.localeCompare(b.postingTitle));
+    const byRecruiter = new Map<string, RecruiterPostingSummary[]>();
+    for (const posting of postingRows) {
+      const key = normalizeGroupValue(posting.recruiter);
+      byRecruiter.set(key, [...(byRecruiter.get(key) || []), posting]);
+    }
+    const recruiterRows = Array.from(byRecruiter.values()).map(postings => {
+      const first = postings[0];
+      const delayedIds = new Set<string>();
+      const stages = new Map<string, StageSummary>();
+      for (const posting of postings) {
+        posting.delayedApplicationIds.forEach(id => delayedIds.add(id));
+        for (const stage of posting.stages) {
+          let aggregate = stages.get(stage.key);
+          if (!aggregate) {
+            aggregate = { ...stage, delayed: 0, assessed: 0, notAssessable: 0, candidateSpecific: 0, delayedApplications: [] };
+            stages.set(stage.key, aggregate);
+          }
+          aggregate.delayed += stage.delayed;
+          aggregate.assessed += stage.assessed;
+          aggregate.notAssessable += stage.notAssessable;
+          aggregate.candidateSpecific += stage.candidateSpecific;
+          aggregate.delayedApplications.push(...stage.delayedApplications);
+        }
+      }
+      return {
+        key: first.key, recruiter: first.recruiter, postingTitle: `${postings.length} postings`, postingRows: postings,
+        totalApplications: postings.reduce((sum, row) => sum + row.totalApplications, 0), delayedApplicationIds: delayedIds,
+        delayEvents: postings.reduce((sum, row) => sum + row.delayEvents, 0),
+        assessedChecks: postings.reduce((sum, row) => sum + row.assessedChecks, 0),
+        notAssessableChecks: postings.reduce((sum, row) => sum + row.notAssessableChecks, 0),
+        candidateSpecificChecks: postings.reduce((sum, row) => sum + row.candidateSpecificChecks, 0),
+        stages: Array.from(stages.values())
+      };
+    }).sort((a, b) => a.recruiter.localeCompare(b.recruiter));
+    return { rows: recruiterRows, excluded };
   }
 
   openRecruiterDetails(event: Event, recruiterName: string) {
@@ -313,7 +319,7 @@ export class RecruiterPostingDelayReportComponent {
 
   recruiterRows(name: string): RecruiterPostingSummary[] {
     const normalized = name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
-    return this.rows().filter(row => row.recruiter.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase() === normalized);
+    return this.rows().find(row => row.recruiter.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase() === normalized)?.postingRows || [];
   }
 
   toggleGroup(key: string) { this.expandedGroupKey.set(this.expandedGroupKey() === key ? '' : key); }

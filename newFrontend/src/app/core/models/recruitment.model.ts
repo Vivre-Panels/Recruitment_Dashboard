@@ -98,6 +98,7 @@ export interface Candidate {
   experienceYears: number;
   currentCompany: string;
   currentDesignation: string;
+  internalDesignation?: string;
   noticePeriodDays: number;
   expectedSalary: string;
   currentSalary: string;

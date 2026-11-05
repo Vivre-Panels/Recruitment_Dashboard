@@ -267,6 +267,7 @@ func RunMigrations() {
 		"In_Talent_Bank":                          "BIT NULL DEFAULT 0",
 		"Candidate_Attributes":                    "NVARCHAR(MAX) NULL",
 		"External_Position":                       "NVARCHAR(500) NULL",
+		"Internal_Designation":                    "NVARCHAR(500) NULL",
 		"n_Round_Delay":                           "NVARCHAR(255) NULL",
 		"n_Round_Delay_Reason":                    "NVARCHAR(255) NULL",
 		"rd_Round_Delay":                          "NVARCHAR(255) NULL",

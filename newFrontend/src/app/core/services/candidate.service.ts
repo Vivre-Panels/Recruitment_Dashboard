@@ -208,6 +208,7 @@ export class CandidateService {
       experienceYears: expYears,
       currentCompany: app.Source || '',
       currentDesignation: app.Current_Designation || '',
+      internalDesignation: app.Internal_Designation || '',
       noticePeriodDays: noticeDays,
       expectedSalary: expectedSal,
       currentSalary: currentSal,

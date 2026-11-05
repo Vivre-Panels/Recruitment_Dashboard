@@ -45,9 +45,22 @@ interface ApplicationStageDetail {
           <div>
             <h2 class="text-sm font-bold text-slate-900">All Applications</h2>
           </div>
-          <span class="w-fit rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
-            {{ candidates.totalCandidates() }} applications
-          </span>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="relative block w-full sm:w-72">
+              <app-icon name="search" [size]="15" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></app-icon>
+              <input
+                type="search"
+                [value]="searchTerm"
+                (input)="searchTerm = $any($event.target).value"
+                placeholder="Search applications..."
+                aria-label="Search applications"
+                class="app-input w-full pl-9 pr-3"
+              />
+            </label>
+            <span class="w-fit whitespace-nowrap rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
+              {{ filteredApplications.length }} / {{ candidates.totalCandidates() }} applications
+            </span>
+          </div>
         </div>
 
         <div *ngIf="candidates.isLoading()" class="flex items-center justify-center gap-3 px-4 py-12 text-sm font-semibold text-slate-500">
@@ -60,7 +73,12 @@ interface ApplicationStageDetail {
           <p class="mt-1 text-xs text-slate-500">There are no application records available in the database.</p>
         </div>
 
-        <div *ngIf="!candidates.isLoading() && candidates.totalCandidates() > 0" class="application-insights-table-viewport min-h-0 flex-1 overflow-auto !max-h-none">
+        <div *ngIf="!candidates.isLoading() && candidates.totalCandidates() > 0 && filteredApplications.length === 0" class="px-4 py-12 text-center">
+          <p class="text-sm font-bold text-slate-800">No matching applications</p>
+          <p class="mt-1 text-xs text-slate-500">Try another name, application ID, position, recruiter, source, or status.</p>
+        </div>
+
+        <div *ngIf="!candidates.isLoading() && filteredApplications.length > 0" class="application-insights-table-viewport min-h-0 flex-1 overflow-auto !max-h-none">
           <table class="w-full min-w-[900px] border-collapse text-left text-xs">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -74,7 +92,7 @@ interface ApplicationStageDetail {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
-              <ng-container *ngFor="let application of candidates.candidates(); trackBy: trackByApplication">
+              <ng-container *ngFor="let application of filteredApplications; trackBy: trackByApplication">
               <tr (click)="openApplicationDetails(application)" class="cursor-pointer hover:bg-slate-50/70">
                 <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-600">
                   <span class="inline-flex items-center gap-1.5">{{ application.id || '—' }}<app-icon name="chevron-right" [size]="13" class="text-brand-600"></app-icon></span>
@@ -162,6 +180,23 @@ export class ApplicationInsightsComponent {
   candidates = inject(CandidateService);
   isApplicationDrawerOpen = false;
   selectedApplication?: Candidate;
+  searchTerm = '';
+
+  get filteredApplications(): Candidate[] {
+    const term = this.searchTerm.trim().toLocaleLowerCase();
+    const applications = this.candidates.candidates();
+    if (!term) return applications;
+
+    return applications.filter(application => [
+      application.id,
+      application.name,
+      application.positionTitle,
+      application.recruiter,
+      application.currentCompany,
+      application.rawStatus,
+      application.status,
+    ].some(value => value?.toLocaleLowerCase().includes(term)));
+  }
 
   openApplicationDetails(application: Candidate) {
     this.selectedApplication = application;
