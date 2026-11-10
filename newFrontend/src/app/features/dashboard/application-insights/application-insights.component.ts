@@ -7,6 +7,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { DrawerComponent } from '../../../shared/components/drawer/drawer.component';
 import { assessApplicationDelays, formatElapsed, parseApplicationTimestamp } from '../../../core/utils/application-delay';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface ApplicationStageDetail {
   label: string;
@@ -31,10 +32,10 @@ interface ApplicationStageDetail {
     <div class="app-page-container !h-full !min-h-0 !p-2 -mt-3 !max-w-7xl">
       <app-page-header [compact]="true" title="Application Wise Insight">
         <div actions class="flex flex-wrap gap-2">
-          <a routerLink="/dashboard/recruiter-posting-delay-report" class="app-btn-secondary inline-flex items-center gap-2">
+          <a *ngIf="auth.user()?.role === 'superadmin'" routerLink="/dashboard/recruiter-posting-delay-report" class="app-btn-secondary inline-flex items-center gap-2">
             <app-icon name="bar-chart" [size]="14"></app-icon>Recruiter × Posting Delays
           </a>
-          <a routerLink="/dashboard/overview" class="app-btn-secondary inline-flex items-center gap-2">
+          <a *ngIf="auth.user()?.role === 'superadmin'" routerLink="/dashboard/overview" class="app-btn-secondary inline-flex items-center gap-2">
             <app-icon name="arrow-left" [size]="14"></app-icon>Back to Dashboard
           </a>
         </div>
@@ -46,6 +47,12 @@ interface ApplicationStageDetail {
             <h2 class="text-sm font-bold text-slate-900">All Applications</h2>
           </div>
           <div class="flex flex-wrap items-center gap-3">
+            <label class="sr-only" for="delay-filter">Filter applications by delay</label>
+            <select id="delay-filter" [value]="delayFilter" (change)="delayFilter = $any($event.target).value" aria-label="Filter applications by delay" class="app-input w-full sm:w-36">
+              <option value="all">All applications</option>
+              <option value="delayed">Delayed</option>
+              <option value="on_time">On time</option>
+            </select>
             <label class="relative block w-full sm:w-72">
               <app-icon name="search" [size]="15" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></app-icon>
               <input
@@ -68,17 +75,23 @@ interface ApplicationStageDetail {
           Loading applications...
         </div>
 
-        <div *ngIf="!candidates.isLoading() && candidates.totalCandidates() === 0" class="px-4 py-12 text-center">
+        <div *ngIf="!candidates.isLoading() && candidates.loadError()" class="px-4 py-12 text-center">
+          <p class="text-sm font-bold text-red-700">Could not load applications</p>
+          <p class="mt-1 text-xs text-slate-500">{{ candidates.loadError() }}</p>
+          <button type="button" (click)="candidates.loadCandidates().subscribe()" class="mt-3 text-xs font-bold text-brand-700 underline">Try again</button>
+        </div>
+
+        <div *ngIf="!candidates.isLoading() && !candidates.loadError() && candidates.totalCandidates() === 0" class="px-4 py-12 text-center">
           <p class="text-sm font-bold text-slate-800">No applications found</p>
           <p class="mt-1 text-xs text-slate-500">There are no application records available in the database.</p>
         </div>
 
-        <div *ngIf="!candidates.isLoading() && candidates.totalCandidates() > 0 && filteredApplications.length === 0" class="px-4 py-12 text-center">
+        <div *ngIf="!candidates.isLoading() && !candidates.loadError() && candidates.totalCandidates() > 0 && filteredApplications.length === 0" class="px-4 py-12 text-center">
           <p class="text-sm font-bold text-slate-800">No matching applications</p>
           <p class="mt-1 text-xs text-slate-500">Try another name, application ID, position, recruiter, source, or status.</p>
         </div>
 
-        <div *ngIf="!candidates.isLoading() && filteredApplications.length > 0" class="application-insights-table-viewport min-h-0 flex-1 overflow-auto !max-h-none">
+        <div *ngIf="!candidates.isLoading() && !candidates.loadError() && filteredApplications.length > 0" class="application-insights-table-viewport min-h-0 flex-1 overflow-auto !max-h-none">
           <table class="w-full min-w-[900px] border-collapse text-left text-xs">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -93,7 +106,7 @@ interface ApplicationStageDetail {
             </thead>
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <ng-container *ngFor="let application of filteredApplications; trackBy: trackByApplication">
-              <tr (click)="openApplicationDetails(application)" class="cursor-pointer hover:bg-slate-50/70">
+              <tr (click)="openApplicationDetails(application)" class="cursor-pointer" [ngClass]="isApplicationDelayed(application) ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-50/70'">
                 <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-600">
                   <span class="inline-flex items-center gap-1.5">{{ application.id || '—' }}<app-icon name="chevron-right" [size]="13" class="text-brand-600"></app-icon></span>
                 </td>
@@ -178,29 +191,40 @@ interface ApplicationStageDetail {
 })
 export class ApplicationInsightsComponent {
   candidates = inject(CandidateService);
+  auth = inject(AuthService);
   isApplicationDrawerOpen = false;
   selectedApplication?: Candidate;
   searchTerm = '';
+  delayFilter: 'all' | 'delayed' | 'on_time' = 'all';
 
   get filteredApplications(): Candidate[] {
     const term = this.searchTerm.trim().toLocaleLowerCase();
     const applications = this.candidates.candidates();
-    if (!term) return applications;
 
-    return applications.filter(application => [
-      application.id,
-      application.name,
-      application.positionTitle,
-      application.recruiter,
-      application.currentCompany,
-      application.rawStatus,
-      application.status,
-    ].some(value => value?.toLocaleLowerCase().includes(term)));
+    return applications.filter(application => {
+      const matchesSearch = !term || [
+        application.id,
+        application.name,
+        application.positionTitle,
+        application.recruiter,
+        application.currentCompany,
+        application.rawStatus,
+        application.status,
+      ].some(value => value?.toLocaleLowerCase().includes(term));
+      const delayed = this.isApplicationDelayed(application);
+      const matchesDelay = this.delayFilter === 'all' ||
+        (this.delayFilter === 'delayed' ? delayed : !delayed);
+      return matchesSearch && matchesDelay;
+    });
   }
 
   openApplicationDetails(application: Candidate) {
     this.selectedApplication = application;
     this.isApplicationDrawerOpen = true;
+  }
+
+  isApplicationDelayed(application: Candidate): boolean {
+    return assessApplicationDelays(application).some(stage => stage.status === 'delayed');
   }
 
   getApplicationStages(application: Candidate): ApplicationStageDetail[] {

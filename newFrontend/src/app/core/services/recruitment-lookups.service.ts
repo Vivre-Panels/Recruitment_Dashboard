@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface RecruiterOption {
   recruiter_id: number;
@@ -23,6 +24,7 @@ interface RecruitmentLookups {
 @Injectable({ providedIn: 'root' })
 export class RecruitmentLookupsService {
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
   private state = signal<RecruitmentLookups>({
     departments: [],
     teams: [],
@@ -42,7 +44,8 @@ export class RecruitmentLookupsService {
   readonly loadError = signal('');
 
   constructor() {
-    this.load().subscribe();
+    if (this.auth.user()?.role === 'superadmin') this.load().subscribe();
+    else this.isLoading.set(false);
   }
 
   load() {

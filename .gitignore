@@ -6,3 +6,4 @@ package-lock.json
 
 .exe
 build
+.env.example

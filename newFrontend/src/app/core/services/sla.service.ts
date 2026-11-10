@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map, tap, catchError } from 'rxjs/operators';
 import { SlaRecord, SlaStatus } from '../models/recruitment.model';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { environment } from '../../../environments/environment';
 export class SlaService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
+  private auth = inject(AuthService);
 
   private slaRecordsState = signal<SlaRecord[]>([]);
   readonly slaRecords = this.slaRecordsState.asReadonly();
@@ -38,7 +40,8 @@ export class SlaService {
   });
 
   constructor() {
-    this.loadSLAs().subscribe();
+    if (this.auth.user()?.role === 'superadmin') this.loadSLAs().subscribe();
+    else this.isLoading.set(false);
   }
 
   loadSLAs(): Observable<SlaRecord[]> {

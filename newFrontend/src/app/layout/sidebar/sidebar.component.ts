@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { NAV_MODULES, NavItem } from '../../core/constants/navigation.constant';
 import { IconComponent } from '../../shared/components/icon/icon.component';
+import { isNavigationRouteActive } from '../../core/utils/navigation-active';
 
 @Component({
   selector: 'app-sidebar',
@@ -56,9 +57,8 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
           <a
             [routerLink]="module.route"
             (click)="linkClicked.emit()"
-            routerLinkActive="bg-brand-500/15 text-brand-400 font-bold border-r-2 border-brand-500"
             class="flex items-center px-3 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 transition-all duration-150 group cursor-pointer"
-            [ngClass]="isCollapsed ? 'justify-center px-0' : 'justify-between'"
+            [ngClass]="[isCollapsed ? 'justify-center px-0' : 'justify-between', isRouteActive(module.route) ? 'bg-brand-500/15 text-brand-400 font-bold border-r-2 border-brand-500' : '']"
             [title]="isCollapsed ? module.label : ''"
           >
             <div class="flex items-center gap-3 min-w-0" [ngClass]="{ 'justify-center': isCollapsed }">
@@ -124,8 +124,6 @@ export class SidebarComponent {
   }
 
   isRouteActive(baseRoute: string): boolean {
-    const current = this.router.url;
-    const prefix = baseRoute.split('/')[1];
-    return current.includes(`/${prefix}/`);
+    return isNavigationRouteActive(this.router, baseRoute);
   }
 }

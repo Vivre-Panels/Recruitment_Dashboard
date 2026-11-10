@@ -163,8 +163,8 @@ export class RecruiterService {
         const activeRecruiters = (recruiterRes && recruiterRes.success && Array.isArray(recruiterRes.data))
           ? recruiterRes.data
             .filter(recruiter => String(recruiter.status || '').toLowerCase() === 'active')
-            .map(recruiter => String(recruiter.recruiter_name || '').trim())
-            .filter(Boolean)
+            .map(recruiter => ({ id: Number(recruiter.recruiter_id), name: String(recruiter.recruiter_name || '').trim() }))
+            .filter(recruiter => recruiter.name)
           : [];
         const allPositionsSet = new Set<string>();
 
@@ -172,14 +172,16 @@ export class RecruiterService {
         const grouped = new Map<string, RecruiterInsightItem>();
 
         apps.forEach(app => {
-          const rawRec = (app.Recruiter_Name || '').trim();
-          
-          const matchedRec = activeRecruiters.find(r => r.toLowerCase() === rawRec.toLowerCase());
+          const rawRec = String(app.Stored_Recruiter_Name || app.Recruiter_Name || '').trim();
+
+          const normalizeRecruiterName = (value: string) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+          const matchedRec = activeRecruiters.find(recruiter => normalizeRecruiterName(recruiter.name) === normalizeRecruiterName(rawRec))
+            || activeRecruiters.find(recruiter => Number(app.Recruiter_ID) > 0 && recruiter.id === Number(app.Recruiter_ID));
 
           // Ignore records not belonging to an official recruiter (e.g. former employees or parser artifacts)
           if (!matchedRec) return;
 
-          const recName = matchedRec;
+          const recName = matchedRec.name;
           const posTitle = String(app.Posting_Title || '').trim();
           if (!posTitle) return;
 
@@ -255,7 +257,7 @@ export class RecruiterService {
           success: true,
           data: dataList,
           filter_options: {
-            recruiters: activeRecruiters.slice().sort(),
+            recruiters: activeRecruiters.map(recruiter => recruiter.name).sort(),
             positions: Array.from(allPositionsSet).sort()
           }
         };

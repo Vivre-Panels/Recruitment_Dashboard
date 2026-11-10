@@ -8,6 +8,8 @@ import { SlaService } from '../../core/services/sla.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { NAV_MODULES } from '../../core/constants/navigation.constant';
+import { AuthService } from '../../core/services/auth.service';
+import { isNavigationRouteActive } from '../../core/utils/navigation-active';
 
 @Component({
   selector: 'app-header',
@@ -30,7 +32,7 @@ import { NAV_MODULES } from '../../core/constants/navigation.constant';
           </button>
 
           <!-- TalentOps Logo & Brand Text -->
-          <a routerLink="/dashboard/overview" class="flex items-center gap-3 group">
+          <a [routerLink]="auth.user()?.role === 'recruiter' ? '/dashboard/application-insights' : '/dashboard/overview'" class="flex items-center gap-3 group">
             <div class="w-9 h-9 rounded-xl bg-white/10 border border-slate-600 p-1 flex items-center justify-center shrink-0 shadow-2xs group-hover:bg-white/15 group-hover:border-slate-400 transition-colors">
               <img src="assets/logo.svg" alt="TalentOps Logo" class="w-full h-full object-contain" />
             </div>
@@ -57,7 +59,7 @@ import { NAV_MODULES } from '../../core/constants/navigation.constant';
         <!-- Right: Global Search, SLA Alerts, Monitor Badge, Profile -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
           <!-- Global Search -->
-          <div class="relative max-w-xs sm:max-w-sm w-44 sm:w-60 md:w-64">
+          <div *ngIf="auth.user()?.role === 'superadmin'" class="relative max-w-xs sm:max-w-sm w-44 sm:w-60 md:w-64">
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                 <app-icon name="search" [size]="15"></app-icon>
@@ -133,6 +135,8 @@ import { NAV_MODULES } from '../../core/constants/navigation.constant';
               </div>
             </div>
           </div>
+
+          <button type="button" (click)="logout()" class="rounded-lg border border-slate-600 px-3 py-2 text-[11px] font-bold text-slate-200 hover:border-slate-400 hover:bg-slate-700" aria-label="Sign out">Sign out</button>
 
           <!-- SLA Alerts Bell Button -->
           <!-- <div class="relative">
@@ -217,8 +221,13 @@ export class HeaderComponent {
   private candidateService = inject(CandidateService);
   slaService = inject(SlaService);
   private router = inject(Router);
+  auth = inject(AuthService);
 
-  navModules = NAV_MODULES;
+  get navModules() {
+    return this.auth.user()?.role === 'recruiter'
+      ? [{ label: 'Application Wise Insight', icon: 'users', route: '/dashboard/application-insights' }]
+      : NAV_MODULES;
+  }
   searchQuery = '';
   showSearchResults = false;
   showNotifications = false;
@@ -228,9 +237,7 @@ export class HeaderComponent {
   matchedCandidates: any[] = [];
 
   isRouteActive(baseRoute: string): boolean {
-    const current = this.router.url;
-    const prefix = baseRoute.split('/')[1];
-    return current.includes(`/${prefix}/`);
+    return isNavigationRouteActive(this.router, baseRoute);
   }
 
   @HostListener('document:click', ['$event'])
@@ -286,6 +293,8 @@ export class HeaderComponent {
     this.showNotifications = false;
     this.router.navigate(['/analytics/sla']);
   }
+
+  logout() { this.auth.logout(); }
 
   toggleNotifications(event?: MouseEvent) {
     if (event) event.stopPropagation();

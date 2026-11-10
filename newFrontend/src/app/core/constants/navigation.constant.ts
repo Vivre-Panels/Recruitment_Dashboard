@@ -14,6 +14,11 @@ export const NAV_MODULES: NavItem[] = [
     route: '/dashboard/overview'
   },
   {
+    label: 'Employees',
+    icon: 'users',
+    route: '/dashboard/employees'
+  },
+  {
     label: 'Recruitment',
     icon: 'briefcase',
     route: '/recruitment/requisitions',

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"recruitment-dashboard/backend/auth"
 	"recruitment-dashboard/backend/cache"
 	"recruitment-dashboard/backend/database"
 	"recruitment-dashboard/backend/models"
@@ -99,6 +100,7 @@ func CreateApplication(c *gin.Context) {
 				[Salary_Negotiation_Drop_Off_Reason] = @p57,
 				[Qualified_Date_Time] = @p58,
 				[Internal_Designation] = @p59,
+				[Recruiter_ID] = COALESCE(TRY_CONVERT(INT, @p60), target.[Recruiter_ID]),
 				[UpdatedAt] = GETUTCDATE()
 		WHEN NOT MATCHED THEN
 			INSERT ([Application_ID], [Application_Created_Time], [Application_Status],
@@ -115,17 +117,26 @@ func CreateApplication(c *gin.Context) {
 				[First_Round_Date_Time], [Second_Round_Date_Time], [Third_Round_Date_Time],
 				[First_Interview_Status], [Final_Round_Review_Status], [rd_Directorial_Round_Status],
 				[Salary_Negotiation_Date_Time], [Appointment_Letter_Date_Time], [Joining_Date_Time], [Date_of_Joining], [Hiring_Date_Time],
-				[Approval_Remarks], [First_Round_Feedback], [Manager_Round_Feedback], [Directorial_Round_Feedback], [Salary_Negotiation_Drop_Off_Reason], [Qualified_Date_Time], [Internal_Designation])
+				[Approval_Remarks], [First_Round_Feedback], [Manager_Round_Feedback], [Directorial_Round_Feedback], [Salary_Negotiation_Drop_Off_Reason], [Qualified_Date_Time], [Internal_Designation], [Recruiter_ID])
 			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15,
 				@p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29,
 				@p30, @p31, @p32, @p33, @p34, @p35, @p36, @p37, @p38, @p39, @p40, @p41, @p42, @p43, @p44,
-				@p45, @p46, @p47, @p48, @p49, @p50, @p51, @p52, @p53, @p54, @p55, @p56, @p57, @p58, @p59)
+				@p45, @p46, @p47, @p48, @p49, @p50, @p51, @p52, @p53, @p54, @p55, @p56, @p57, @p58, @p59, TRY_CONVERT(INT, @p60))
 		OUTPUT INSERTED.[Id];`
 
 	auditScore := parseFloat(app.CallAuditScore)
 	cvScore := parseFloat(app.CVScore)
 	cvLink := extractHref(app.CVLink)
 	jobOpeningID := toString(app.JobOpeningID)
+	var recruiterID interface{}
+	if app.RecruiterID != nil {
+		recruiterID = *app.RecruiterID
+	} else if app.RecruiterName != nil && strings.TrimSpace(*app.RecruiterName) != "" {
+		var resolvedID int
+		if database.DB.Get(&resolvedID, `SELECT MIN([recruiter_id]) FROM [dbo].[recruiters] WHERE LOWER(LTRIM(RTRIM([recruiter_name]))) = LOWER(LTRIM(RTRIM(@p1))) HAVING COUNT(*) = 1`, *app.RecruiterName) == nil {
+			recruiterID = resolvedID
+		}
+	}
 
 	var newID int64
 	err := database.DB.DB.QueryRow(query,
@@ -188,6 +199,7 @@ func CreateApplication(c *gin.Context) {
 		app.SalaryNegotiationDropOffReason,
 		app.QualifiedDateTime,
 		app.InternalDesignation,
+		recruiterID,
 	).Scan(&newID)
 
 	if err != nil {
@@ -272,7 +284,8 @@ func CreateApplication(c *gin.Context) {
 }
 
 func GetApplications(c *gin.Context) {
-	cacheKey := "applications:" + c.Request.URL.RawQuery
+	session, _ := auth.Current(c)
+	cacheKey := fmt.Sprintf("applications:%d:%s:%s", session.UserID, session.Role, c.Request.URL.RawQuery)
 	if val, ok := cache.Get(cacheKey, 30*time.Second); ok {
 		c.JSON(http.StatusOK, val)
 		return
@@ -306,32 +319,47 @@ func GetApplications(c *gin.Context) {
 	argIdx := 1
 
 	if dept != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("EXISTS (SELECT 1 FROM [dbo].[requisition] r WHERE r.[Job_Opening_ID] = [dbo].[application_pipeline].[Job_Opening_ID] AND r.[Department] = @p%d)", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("EXISTS (SELECT 1 FROM [dbo].[requisition] r WHERE r.[Job_Opening_ID] = a.[Job_Opening_ID] AND r.[Department] = @p%d)", argIdx))
 		args = append(args, dept)
 		argIdx++
 	}
 	if pos != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("[Posting_Title] LIKE @p%d", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("a.[Posting_Title] LIKE @p%d", argIdx))
 		args = append(args, "%"+pos+"%")
 		argIdx++
 	}
 	if owner != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("[Recruiter_Name] = @p%d", argIdx))
-		args = append(args, owner)
+		if session.Role == "superadmin" {
+			whereClauses = append(whereClauses, fmt.Sprintf(`LOWER(REPLACE(LTRIM(RTRIM(ISNULL(a.[Recruiter_Name], ''))), ' ', '')) = (
+				SELECT TOP (1) LOWER(REPLACE(LTRIM(RTRIM([recruiter_name])), ' ', ''))
+				FROM [dbo].[recruiters]
+				WHERE LOWER(REPLACE(LTRIM(RTRIM([recruiter_name])), ' ', '')) = LOWER(REPLACE(LTRIM(RTRIM(@p%d)), ' ', ''))
+			)`, argIdx))
+			args = append(args, owner)
+			argIdx++
+		}
+	}
+	if session.Role == "recruiter" {
+		whereClauses = append(whereClauses, fmt.Sprintf(`LOWER(REPLACE(LTRIM(RTRIM(ISNULL(a.[Recruiter_Name], ''))), ' ', '')) = (
+			SELECT TOP (1) LOWER(REPLACE(LTRIM(RTRIM([recruiter_name])), ' ', ''))
+			FROM [dbo].[recruiters]
+			WHERE [recruiter_id] = @p%d AND LOWER(LTRIM(RTRIM([status]))) = 'active'
+		)`, argIdx))
+		args = append(args, *session.RecruiterID)
 		argIdx++
 	}
 	if prio != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("([Call_Priority] = @p%d OR EXISTS (SELECT 1 FROM [dbo].[requisition] r WHERE r.[Job_Opening_ID] = [dbo].[application_pipeline].[Job_Opening_ID] AND r.[Priority] = @p%d))", argIdx, argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("(a.[Call_Priority] = @p%d OR EXISTS (SELECT 1 FROM [dbo].[requisition] r WHERE r.[Job_Opening_ID] = a.[Job_Opening_ID] AND r.[Priority] = @p%d))", argIdx, argIdx))
 		args = append(args, prio)
 		argIdx++
 	}
 	if from != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("[Application_Created_Time] >= @p%d", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("a.[Application_Created_Time] >= @p%d", argIdx))
 		args = append(args, from)
 		argIdx++
 	}
 	if to != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("[Application_Created_Time] <= DATEADD(DAY, 1, @p%d)", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("a.[Application_Created_Time] <= DATEADD(DAY, 1, @p%d)", argIdx))
 		args = append(args, to)
 		argIdx++
 	}
@@ -343,7 +371,7 @@ func GetApplications(c *gin.Context) {
 	if whereStmt == "1=1" {
 		_ = database.DB.Get(&total, `SELECT ISNULL(SUM(p.rows), 0) FROM sys.partitions p WHERE p.object_id = OBJECT_ID('dbo.application_pipeline') AND p.index_id < 2`)
 	} else {
-		countQuery := fmt.Sprintf(`SELECT COUNT(1) FROM [dbo].[application_pipeline] WHERE %s`, whereStmt)
+		countQuery := fmt.Sprintf(`SELECT COUNT(1) FROM [dbo].[application_pipeline] a WHERE %s`, whereStmt)
 		_ = database.DB.Get(&total, countQuery, args...)
 	}
 
@@ -375,7 +403,9 @@ func GetApplications(c *gin.Context) {
 				ELSE 'Operations Support'
 			END
 		) AS Team,
-		a.[Recruiter_Name], a.[Source], a.[Profile_Summary], a.[Tellecalling_Feedback],
+		COALESCE(NULLIF(a.[Recruiter_Name], ''), assigned_recruiter.[recruiter_name]) AS Recruiter_Name,
+		a.[Recruiter_Name] AS Stored_Recruiter_Name,
+		a.[Source], a.[Profile_Summary], a.[Tellecalling_Feedback],
 		a.[Approval_Remarks], a.[First_Round_Feedback], a.[Manager_Round_Feedback], a.[Directorial_Round_Feedback],
 		a.[Salary_Negotiation_Drop_Off_Reason],
 		a.[TelleCalling_Time], a.[Tellecalling_Status], a.[Offer_Accepted_DateTime],
@@ -391,8 +421,10 @@ func GetApplications(c *gin.Context) {
 		a.[Call_Duration], a.[Performance_Score], a.[Behaviour_Score], a.[Performance_Eval_Details],
 		a.[Behaviour_Eval_Details], a.[Retention_7d_Status], a.[Retention_30d_Status],
 		a.[Is_30d_Failure], a.[Replacement_Required], a.[In_Talent_Bank], a.[Candidate_Attributes],
-		a.[CreatedAt], a.[UpdatedAt], a.[Internal_Designation]
+		a.[CreatedAt], a.[UpdatedAt], a.[Internal_Designation], a.[Recruiter_ID]
 		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
+		LEFT JOIN [dbo].[recruiters] assigned_recruiter WITH (NOLOCK)
+			ON assigned_recruiter.[recruiter_id] = a.[Recruiter_ID]
 		LEFT JOIN [dbo].[requisition] r WITH (NOLOCK) 
 			ON (a.[Job_Opening_ID] = r.[Job_Opening_ID] OR LOWER(a.[Posting_Title]) = LOWER(r.[Job_Title]))
 		WHERE %s ORDER BY a.[Application_Created_Time] DESC

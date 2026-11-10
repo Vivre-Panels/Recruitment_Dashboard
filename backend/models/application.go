@@ -21,6 +21,8 @@ type Application struct {
 	PositionOpeningDate                 *string     `json:"Position_Opening_Date" db:"Position_Opening_Date"`
 	Team                                *string     `json:"Team" db:"Team"`
 	RecruiterName                       *string     `json:"Recruiter_Name" db:"Recruiter_Name"`
+	StoredRecruiterName                 *string     `json:"Stored_Recruiter_Name" db:"Stored_Recruiter_Name"`
+	RecruiterID                         *int        `json:"Recruiter_ID" db:"Recruiter_ID"`
 	Source                              *string     `json:"Source" db:"Source"`
 	ProfileSummary                      *string     `json:"Profile_Summary" db:"Profile_Summary"`
 	TellecallingFeedback                *string     `json:"Tellecalling_Feedback" db:"Tellecalling_Feedback"`

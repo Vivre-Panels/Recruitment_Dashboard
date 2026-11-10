@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
 import { Position, HealthStatus, PriorityLevel } from '../models/recruitment.model';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { environment } from '../../../environments/environment';
 export class PositionService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
+  private auth = inject(AuthService);
 
   private positionsState = signal<Position[]>([]);
   readonly positions = this.positionsState.asReadonly();
@@ -45,7 +47,8 @@ export class PositionService {
   );
 
   constructor() {
-    this.loadPositions().subscribe();
+    if (this.auth.user()?.role === 'superadmin') this.loadPositions().subscribe();
+    else this.isLoading.set(false);
   }
 
   loadPositions(): Observable<Position[]> {

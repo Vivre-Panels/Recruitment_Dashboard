@@ -49,6 +49,15 @@ func CreateRequisition(c *gin.Context) {
 	openings := parseNoOfOpenings(req.NoOfOpenings)
 	requisitionID := toString(req.RequisitionID)
 	jobOpeningID := toString(req.JobOpeningID)
+	var recruiterID interface{}
+	if req.RecruiterID != nil {
+		recruiterID = *req.RecruiterID
+	} else if req.RecruiterName != nil && strings.TrimSpace(*req.RecruiterName) != "" {
+		var resolvedID int
+		if database.DB.Get(&resolvedID, `SELECT MIN([recruiter_id]) FROM [dbo].[recruiters] WHERE LOWER(LTRIM(RTRIM([recruiter_name]))) = LOWER(LTRIM(RTRIM(@p1))) HAVING COUNT(*) = 1`, *req.RecruiterName) == nil {
+			recruiterID = resolvedID
+		}
+	}
 
 	query := `MERGE [dbo].[requisition] AS target
 		USING (SELECT @p1 AS Requisition_ID) AS source
@@ -63,6 +72,7 @@ func CreateRequisition(c *gin.Context) {
 				[No_Of_Openings] = @p6,
 				[Opening_Date] = @p7,
 				[Recruiter_Name] = @p8,
+				[Recruiter_ID] = COALESCE(TRY_CONVERT(INT, @p24), target.[Recruiter_ID]),
 				[Status] = @p9,
 				[Target_Date] = @p10,
 				[Hiring_Manager] = ISNULL(@p11, target.[Hiring_Manager]),
@@ -83,8 +93,8 @@ func CreateRequisition(c *gin.Context) {
 				[Job_Title], [No_Of_Openings], [Opening_Date], [Recruiter_Name],
 				[Status], [Target_Date], [Hiring_Manager], [Priority], [Salary_Range],
 				[Location], [Experience_Required], [Preferred_Industries], [Must_Haves],
-				[Knockout_Criteria], [Bottleneck_Type], [Pending_Since], [Remarks], [Action_Owner])
-			VALUES (@p1, @p2, @p3, @p23, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22)
+				[Knockout_Criteria], [Bottleneck_Type], [Pending_Since], [Remarks], [Action_Owner], [Recruiter_ID])
+			VALUES (@p1, @p2, @p3, @p23, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, TRY_CONVERT(INT, @p24))
 		OUTPUT INSERTED.[Id];`
 
 	var newID int64
@@ -112,6 +122,7 @@ func CreateRequisition(c *gin.Context) {
 		req.Remarks,
 		req.ActionOwner,
 		req.Team,
+		recruiterID,
 	).Scan(&newID)
 
 	if err != nil {
@@ -128,9 +139,9 @@ func CreateRequisition(c *gin.Context) {
 		"success": true,
 		"message": "Requisition saved successfully",
 		"data": gin.H{
-			"id":              newID,
-			"Requisition_ID":  requisitionID,
-			"Job_Opening_ID":  jobOpeningID,
+			"id":             newID,
+			"Requisition_ID": requisitionID,
+			"Job_Opening_ID": jobOpeningID,
 		},
 	})
 
@@ -164,6 +175,11 @@ func GetRequisitions(c *gin.Context) {
 		args = append(args, owner)
 		argIdx++
 	}
+	if role := c.GetString("auth_role"); role == "recruiter" {
+		whereClauses = append(whereClauses, fmt.Sprintf("[Recruiter_ID] = @p%d", argIdx))
+		args = append(args, c.GetInt("auth_recruiter_id"))
+		argIdx++
+	}
 	if prio != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("[Priority] = @p%d", argIdx))
 		args = append(args, prio)
@@ -182,7 +198,7 @@ func GetRequisitions(c *gin.Context) {
 
 	whereStmt := strings.Join(whereClauses, " AND ")
 	query := fmt.Sprintf(`SELECT [Id], [Job_Opening_ID], [Requisition_ID], [Department], ISNULL([Team], '') AS Team, [Job_Description],
-		[Job_Title], [No_Of_Openings], [Opening_Date], [Recruiter_Name],
+		[Job_Title], [No_Of_Openings], [Opening_Date], [Recruiter_Name], [Recruiter_ID],
 		[Status], [Target_Date], [Hiring_Manager], [Priority], [Salary_Range], [Location],
 		[Experience_Required], [Preferred_Industries], [Must_Haves], [Knockout_Criteria],
 		[Bottleneck_Type], [Pending_Since], [Remarks], [Action_Owner], [CreatedAt], [UpdatedAt]

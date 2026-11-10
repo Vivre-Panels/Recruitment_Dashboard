@@ -29,10 +29,61 @@ func Connect(cfg *config.Config) {
 	if err = DB.Ping(); err != nil {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
+	// Authentication tables are required by the auth handler and its startup
+	// superadmin bootstrap. Create them before the legacy dashboard migrations,
+	// so an unrelated legacy migration cannot prevent users from being created.
+	if err = ensureAuthTables(); err != nil {
+		log.Fatalf("Failed to initialize authentication tables: %v", err)
+	}
 
 	RunMigrations()
 
 	fmt.Println("Connected to SQL Server database successfully")
+}
+
+func ensureAuthTables() error {
+	const recruitersQuery = `
+		IF OBJECT_ID(N'[dbo].[recruiters]', N'U') IS NULL
+		BEGIN
+			CREATE TABLE [dbo].[recruiters] (
+				[recruiter_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+				[recruiter_name] NVARCHAR(255) NOT NULL,
+				[email] NVARCHAR(255) NOT NULL,
+				[User_ID] NVARCHAR(255) NOT NULL,
+				[status] NVARCHAR(50) NOT NULL DEFAULT 'Active',
+				[CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+				[UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+				CONSTRAINT [UQ_recruiters_UserID] UNIQUE ([User_ID])
+			)
+		END`
+	if _, err := DB.Exec(recruitersQuery); err != nil {
+		return fmt.Errorf("ensure recruiters table: %w", err)
+	}
+
+	const usersQuery = `
+		IF OBJECT_ID(N'[dbo].[dashboard_users]', N'U') IS NULL
+		BEGIN
+			CREATE TABLE [dbo].[dashboard_users] (
+				[id] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_dashboard_users] PRIMARY KEY,
+				[recruiter_id] INT NULL,
+				[email] NVARCHAR(255) NOT NULL,
+				[password_hash] NVARCHAR(255) NOT NULL,
+				[role] NVARCHAR(32) NOT NULL,
+				[is_active] BIT NOT NULL CONSTRAINT [DF_dashboard_users_is_active] DEFAULT 1,
+				[created_at] DATETIME2 NOT NULL CONSTRAINT [DF_dashboard_users_created_at] DEFAULT GETUTCDATE(),
+				CONSTRAINT [FK_dashboard_users_recruiters] FOREIGN KEY ([recruiter_id]) REFERENCES [dbo].[recruiters]([recruiter_id]),
+				CONSTRAINT [CK_dashboard_users_role] CHECK ([role] IN ('recruiter', 'superadmin')),
+				CONSTRAINT [CK_dashboard_users_role_recruiter] CHECK (([role] = 'recruiter' AND [recruiter_id] IS NOT NULL) OR ([role] = 'superadmin' AND [recruiter_id] IS NULL))
+			)
+		END
+		IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[dashboard_users]') AND name = 'UX_dashboard_users_email')
+			CREATE UNIQUE INDEX [UX_dashboard_users_email] ON [dbo].[dashboard_users]([email])
+		IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[dashboard_users]') AND name = 'UX_dashboard_users_recruiter')
+			CREATE UNIQUE INDEX [UX_dashboard_users_recruiter] ON [dbo].[dashboard_users]([recruiter_id]) WHERE [recruiter_id] IS NOT NULL`
+	if _, err := DB.Exec(usersQuery); err != nil {
+		return fmt.Errorf("ensure dashboard_users table: %w", err)
+	}
+	return nil
 }
 
 func RunMigrations() {
@@ -200,6 +251,68 @@ func RunMigrations() {
 		}
 	}
 
+	// Add stable recruiter relationships without removing or rewriting legacy name fields.
+	for _, table := range []string{"application_pipeline", "requisition"} {
+		alterQuery := fmt.Sprintf(`
+			IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[%s]') AND name = 'Recruiter_ID')
+				ALTER TABLE [dbo].[%s] ADD [Recruiter_ID] INT NULL
+		`, table, table)
+		if _, err = DB.Exec(alterQuery); err != nil {
+			log.Fatalf("Failed to add Recruiter_ID to %s: %v", table, err)
+		}
+		backfillQuery := fmt.Sprintf(`
+			;WITH UniqueRecruiterNames AS (
+				SELECT LOWER(LTRIM(RTRIM([recruiter_name]))) AS normalized_name, MIN([recruiter_id]) AS recruiter_id
+				FROM [dbo].[recruiters]
+				WHERE NULLIF(LTRIM(RTRIM([recruiter_name])), '') IS NOT NULL
+				GROUP BY LOWER(LTRIM(RTRIM([recruiter_name]))) HAVING COUNT(*) = 1
+			)
+			UPDATE target SET [Recruiter_ID] = names.recruiter_id
+			FROM [dbo].[%s] target
+			INNER JOIN UniqueRecruiterNames names
+				ON LOWER(LTRIM(RTRIM(target.[Recruiter_Name]))) = names.normalized_name
+			WHERE target.[Recruiter_ID] IS NULL
+		`, table)
+		if _, err = DB.Exec(backfillQuery); err != nil {
+			log.Fatalf("Failed to backfill Recruiter_ID in %s: %v", table, err)
+		}
+		constraintName := "FK_" + table + "_recruiters"
+		fkQuery := fmt.Sprintf(`
+			IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = '%s')
+				ALTER TABLE [dbo].[%s] WITH CHECK ADD CONSTRAINT [%s] FOREIGN KEY ([Recruiter_ID]) REFERENCES [dbo].[recruiters]([recruiter_id])
+			IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[%s]') AND name = 'IX_%s_Recruiter_ID')
+				CREATE INDEX [IX_%s_Recruiter_ID] ON [dbo].[%s]([Recruiter_ID])
+		`, constraintName, table, constraintName, table, table, table, table)
+		if _, err = DB.Exec(fkQuery); err != nil {
+			log.Fatalf("Failed to add recruiter relationship to %s: %v", table, err)
+		}
+	}
+
+	// Dashboard credentials are separate from the existing recruiter directory.
+	usersQuery := `
+		IF OBJECT_ID(N'[dbo].[dashboard_users]', N'U') IS NULL
+		BEGIN
+			CREATE TABLE [dbo].[dashboard_users] (
+				[id] INT IDENTITY(1,1) NOT NULL CONSTRAINT [PK_dashboard_users] PRIMARY KEY,
+				[recruiter_id] INT NULL,
+				[email] NVARCHAR(255) NOT NULL,
+				[password_hash] NVARCHAR(255) NOT NULL,
+				[role] NVARCHAR(32) NOT NULL,
+				[is_active] BIT NOT NULL CONSTRAINT [DF_dashboard_users_is_active] DEFAULT 1,
+				[created_at] DATETIME2 NOT NULL CONSTRAINT [DF_dashboard_users_created_at] DEFAULT GETUTCDATE(),
+				CONSTRAINT [FK_dashboard_users_recruiters] FOREIGN KEY ([recruiter_id]) REFERENCES [dbo].[recruiters]([recruiter_id]),
+				CONSTRAINT [CK_dashboard_users_role] CHECK ([role] IN ('recruiter', 'superadmin')),
+				CONSTRAINT [CK_dashboard_users_role_recruiter] CHECK (([role] = 'recruiter' AND [recruiter_id] IS NOT NULL) OR ([role] = 'superadmin' AND [recruiter_id] IS NULL))
+			)
+		END
+		IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[dashboard_users]') AND name = 'UX_dashboard_users_email')
+			CREATE UNIQUE INDEX [UX_dashboard_users_email] ON [dbo].[dashboard_users]([email])
+		IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[dashboard_users]') AND name = 'UX_dashboard_users_recruiter')
+			CREATE UNIQUE INDEX [UX_dashboard_users_recruiter] ON [dbo].[dashboard_users]([recruiter_id]) WHERE [recruiter_id] IS NOT NULL
+	`
+	if _, err = DB.Exec(usersQuery); err != nil {
+		log.Fatalf("Failed to create dashboard_users: %v", err)
+	}
 	// Follow Up table
 	query = `
     IF NOT EXISTS (

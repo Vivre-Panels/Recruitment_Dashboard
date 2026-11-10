@@ -743,14 +743,14 @@ func GetRecruiterInsights(c *gin.Context) {
 	toParam := strings.TrimSpace(c.Query("to"))
 
 	whereClauses := []string{
-		"NULLIF(LTRIM(RTRIM(ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]))), '') IS NOT NULL",
+		"ar.[recruiter_id] IS NOT NULL",
 		"NULLIF(LTRIM(RTRIM(ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title]))), '') IS NOT NULL",
 	}
 	args := []interface{}{}
 	argIdx := 1
 
 	if recruiterParam != "" && recruiterParam != "ALL" {
-		whereClauses = append(whereClauses, fmt.Sprintf("LOWER(LTRIM(RTRIM(ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name])))) = LOWER(LTRIM(RTRIM(@p%d)))", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("ar.[recruiter_id] = (SELECT TOP (1) [recruiter_id] FROM [dbo].[recruiters] WHERE LOWER(REPLACE(LTRIM(RTRIM([recruiter_name])), ' ', '')) = LOWER(REPLACE(LTRIM(RTRIM(@p%d)), ' ', '')) AND LOWER(LTRIM(RTRIM([status]))) = 'active')", argIdx))
 		args = append(args, recruiterParam)
 		argIdx++
 	}
@@ -777,7 +777,7 @@ func GetRecruiterInsights(c *gin.Context) {
 
 	query := fmt.Sprintf(`
 		SELECT 
-			ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]) AS recruiter_name,
+			ar.[recruiter_name] AS recruiter_name,
 			ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title]) AS position,
 			COUNT(1) AS cv_sourced,
 			COUNT(CASE WHEN LOWER(a.[Application_Status]) LIKE '%%approve%%' 
@@ -806,14 +806,22 @@ func GetRecruiterInsights(c *gin.Context) {
 			MAX(ISNULL(CONVERT(NVARCHAR(25), r.[Pending_Since], 120), '')) AS pending_since
 		FROM [dbo].[application_pipeline] a WITH (NOLOCK)
 		LEFT JOIN [dbo].[requisition] r WITH (NOLOCK) ON a.[Job_Opening_ID] = r.[Job_Opening_ID]
-		INNER JOIN [dbo].[recruiters] ar WITH (NOLOCK)
-			ON LOWER(LTRIM(RTRIM(ar.[recruiter_name]))) = LOWER(LTRIM(RTRIM(ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]))))
-			AND LOWER(LTRIM(RTRIM(ar.[status]))) = 'active'
+		CROSS APPLY (
+			SELECT TOP (1) directory.[recruiter_id], directory.[recruiter_name]
+			FROM [dbo].[recruiters] directory WITH (NOLOCK)
+			WHERE LOWER(LTRIM(RTRIM(directory.[status]))) = 'active'
+				AND (directory.[recruiter_id] = a.[Recruiter_ID]
+					OR LOWER(REPLACE(LTRIM(RTRIM(directory.[recruiter_name])), ' ', '')) = LOWER(REPLACE(LTRIM(RTRIM(COALESCE(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]))), ' ', '')))
+			ORDER BY CASE
+				WHEN LOWER(REPLACE(LTRIM(RTRIM(directory.[recruiter_name])), ' ', '')) = LOWER(REPLACE(LTRIM(RTRIM(COALESCE(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]))), ' ', '')) THEN 0
+				ELSE 1
+			END, directory.[recruiter_id]
+		) ar
 		WHERE %s
 		GROUP BY 
-			ISNULL(NULLIF(a.[Recruiter_Name], ''), r.[Recruiter_Name]),
+			ar.[recruiter_id], ar.[recruiter_name],
 			ISNULL(NULLIF(a.[Posting_Title], ''), r.[Job_Title])
-		ORDER BY recruiter_name, position`, whereStmt)
+		ORDER BY ar.[recruiter_name], position`, whereStmt)
 
 	rows, err := database.DB.Query(query, args...)
 	if err != nil {

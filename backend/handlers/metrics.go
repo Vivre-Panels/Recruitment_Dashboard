@@ -26,6 +26,38 @@ func GetRecruiters(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": recruiters})
 }
 
+type EmployeeAccount struct {
+	ID              int    `json:"id" db:"id"`
+	Name            string `json:"name" db:"name"`
+	Email           string `json:"email" db:"email"`
+	Role            string `json:"role" db:"role"`
+	IsActive        bool   `json:"is_active" db:"is_active"`
+	RecruiterStatus string `json:"recruiter_status" db:"recruiter_status"`
+	CreatedAt       string `json:"created_at" db:"created_at"`
+}
+
+func GetEmployees(c *gin.Context) {
+	var employees []EmployeeAccount
+	err := database.DB.Select(&employees, `
+		SELECT du.[id],
+			COALESCE(r.[recruiter_name], CASE WHEN du.[role] = 'superadmin' THEN 'Administrator' ELSE 'Unassigned' END) AS [name],
+			du.[email], du.[role], du.[is_active],
+			COALESCE(r.[status], 'N/A') AS [recruiter_status],
+			CONVERT(NVARCHAR(33), du.[created_at], 126) AS [created_at]
+		FROM [dbo].[dashboard_users] du
+		LEFT JOIN [dbo].[recruiters] r ON r.[recruiter_id] = du.[recruiter_id]
+		ORDER BY CASE WHEN du.[role] = 'superadmin' THEN 0 ELSE 1 END, [name]`)
+	if err != nil {
+		log.Printf("Failed to fetch employee accounts: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Could not load employee accounts."})
+		return
+	}
+	if employees == nil {
+		employees = []EmployeeAccount{}
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": employees})
+}
+
 func CreateRecruiter(c *gin.Context) {
 	var input struct {
 		RecruiterName string `json:"recruiter_name"`

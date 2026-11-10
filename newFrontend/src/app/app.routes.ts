@@ -1,10 +1,18 @@
 import { Routes } from '@angular/router';
 import { AppShellComponent } from './layout/shell/app-shell.component';
+import { authGuard, roleGuard } from './core/auth/auth.guards';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    loadComponent: () => import('./features/auth/auth-page.component').then(m => m.AuthPageComponent),
+    data: { mode: 'login' }
+  },
+  {
     path: '',
     component: AppShellComponent,
+    canActivate: [authGuard],
+    canActivateChild: [roleGuard],
     children: [
       {
         path: '',
@@ -17,6 +25,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/dashboard/overview/overview.component').then(
             m => m.DashboardOverviewComponent
+          )
+      },
+      {
+        path: 'dashboard/employees',
+        data: { roles: ['superadmin'] },
+        loadComponent: () =>
+          import('./features/dashboard/employees/employees.component').then(
+            m => m.EmployeesComponent
           )
       },
       {
@@ -42,6 +58,7 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard/application-insights',
+        data: { roles: ['superadmin', 'recruiter'] },
         loadComponent: () =>
           import('./features/dashboard/application-insights/application-insights.component').then(
             m => m.ApplicationInsightsComponent
@@ -208,6 +225,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'dashboard/overview'
+    redirectTo: 'login'
   }
 ];

@@ -15,6 +15,7 @@ export class CandidateService {
   private candidatesState = signal<Candidate[]>([]);
   readonly candidates = this.candidatesState.asReadonly();
   readonly isLoading = signal<boolean>(true);
+  readonly loadError = signal('');
 
   readonly totalCandidates = computed(() => this.candidatesState().length);
 
@@ -45,6 +46,7 @@ export class CandidateService {
   }
 
   loadCandidates(): Observable<Candidate[]> {
+    this.loadError.set('');
     if (this.candidatesState().length === 0) {
       this.isLoading.set(true);
     }
@@ -59,6 +61,7 @@ export class CandidateService {
       }),
       catchError(err => {
         console.warn('Backend candidates API connection failed; displaying no records:', err);
+        this.loadError.set('Could not load applications from the database. Please check the backend and try again.');
         this.isLoading.set(false);
         return of(this.candidatesState());
       })
